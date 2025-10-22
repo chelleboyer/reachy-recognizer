@@ -104,11 +104,30 @@ class BehaviorManager:
         Initialize behavior manager.
         
         Args:
-            reachy: ReachyMini instance (creates mock if None)
+            reachy: ReachyMini instance (None = auto-connect or mock)
             enable_robot: If False, runs in simulation mode (no real movements)
         """
         self.reachy = reachy
-        self.enable_robot = enable_robot and reachy is not None
+        self.enable_robot = enable_robot
+        self.auto_connected = False
+        
+        # Try to auto-connect if reachy not provided and robot enabled
+        if self.enable_robot and self.reachy is None and REACHY_AVAILABLE:
+            try:
+                logger.info("Attempting to connect to Reachy...")
+                self.reachy = ReachyMini(media_backend="no_media")
+                self.auto_connected = True
+                logger.info("✓ Connected to Reachy successfully")
+            except Exception as e:
+                logger.warning(f"Failed to connect to Reachy: {e}")
+                logger.info("Falling back to SIMULATION mode")
+                self.enable_robot = False
+        
+        # Finalize robot status
+        if not REACHY_AVAILABLE:
+            self.enable_robot = False
+        elif self.reachy is None:
+            self.enable_robot = False
         
         # Behavior state
         self.current_behavior: Optional[Behavior] = None
@@ -123,7 +142,7 @@ class BehaviorManager:
         if not self.enable_robot:
             logger.info("BehaviorManager initialized in SIMULATION mode")
         else:
-            logger.info("BehaviorManager initialized with real robot")
+            logger.info("BehaviorManager initialized with REAL ROBOT")
     
     def execute_behavior(self, behavior: Behavior) -> bool:
         """
@@ -233,6 +252,26 @@ class BehaviorManager:
             "behaviors_interrupted": self.behaviors_interrupted,
             "currently_executing": self.current_behavior is not None
         }
+    
+    def close(self):
+        """Cleanup resources (close robot connection if auto-connected)."""
+        if self.auto_connected and self.reachy is not None:
+            try:
+                logger.info("Closing Reachy connection...")
+                # ReachyMini uses __exit__ for cleanup, not close()
+                if hasattr(self.reachy, '__exit__'):
+                    self.reachy.__exit__(None, None, None)
+            except Exception as e:
+                logger.warning(f"Error closing Reachy connection: {e}")
+    
+    def __enter__(self):
+        """Context manager entry."""
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit."""
+        self.close()
+        return False
 
 
 # =============================================================================
