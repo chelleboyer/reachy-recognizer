@@ -11,7 +11,7 @@ pipeline that achieves ≥5 FPS real-time recognition.
 import cv2
 import numpy as np
 import time
-from typing import List, Tuple, Optional, Dict, Any
+from typing import List, Tuple, Optional, Dict, Any, Callable
 from pathlib import Path
 import logging
 
@@ -20,6 +20,7 @@ from face_detector import FaceDetector
 from face_encoder import FaceEncoder
 from face_database import FaceDatabase
 from face_recognizer import FaceRecognizer
+from event_system import EventManager, RecognitionEvent, EventType
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -51,7 +52,10 @@ class RecognitionPipeline:
         database: Optional[FaceDatabase] = None,
         recognizer: Optional[FaceRecognizer] = None,
         recognition_threshold: float = 0.6,
-        process_every_n_frames: int = 1
+        process_every_n_frames: int = 1,
+        enable_events: bool = False,
+        event_debounce_frames: int = 3,
+        event_departed_frames: int = 3
     ):
         """
         Initialize recognition pipeline.
@@ -64,11 +68,15 @@ class RecognitionPipeline:
             recognizer: FaceRecognizer instance (creates new if None)
             recognition_threshold: Similarity threshold for recognition
             process_every_n_frames: Process every Nth frame (1 = every frame)
+            enable_events: Enable event system for behavior triggers
+            event_debounce_frames: Frames required before event trigger
+            event_departed_frames: Absent frames before DEPARTED event
             
         Example:
-            >>> pipeline = RecognitionPipeline()
+            >>> pipeline = RecognitionPipeline(enable_events=True)
             >>> pipeline.load_database("faces.json")
             >>> results = pipeline.process_frame(frame)
+            >>> events = pipeline.get_recent_events()
         """
         # Initialize components
         self.camera = camera if camera is not None else CameraInterface()
@@ -82,6 +90,17 @@ class RecognitionPipeline:
             database=self.database,
             threshold=recognition_threshold
         )
+        
+        # Event system (Story 2.5)
+        self.enable_events = enable_events
+        if enable_events:
+            self.event_manager = EventManager(
+                debounce_frames=event_debounce_frames,
+                departed_frames=event_departed_frames
+            )
+            logger.info(f"Event system enabled (debounce={event_debounce_frames}, departed={event_departed_frames})")
+        else:
+            self.event_manager = None
         
         # Pipeline configuration
         self.process_every_n_frames = max(1, process_every_n_frames)
@@ -183,6 +202,10 @@ class RecognitionPipeline:
             results.append((name, confidence, bbox))
         
         self.last_results = results
+        
+        # Generate events if event system enabled (Story 2.5)
+        if self.event_manager is not None:
+            self.event_manager.process_recognition_results(results, frame_number=self.frame_count)
         
         # Update performance metrics
         self._update_performance_metrics(start_time)
@@ -314,6 +337,80 @@ class RecognitionPipeline:
             cv2.putText(output, time_text, (20, 85), font, 0.5, (0, 255, 0), 1)
         
         return output
+    
+    # Event System Methods (Story 2.5)
+    
+    def add_event_callback(
+        self,
+        event_type: EventType,
+        callback: Callable[[RecognitionEvent], None]
+    ) -> Optional[int]:
+        """
+        Register a callback for recognition events.
+        
+        Args:
+            event_type: Type of event to listen for
+            callback: Function to call when event occurs
+            
+        Returns:
+            Callback ID for later removal (or None if events disabled)
+            
+        Example:
+            >>> def greet_person(event: RecognitionEvent):
+            >>>     print(f"Hello {event.person_name}!")
+            >>> 
+            >>> callback_id = pipeline.add_event_callback(
+            >>>     EventType.PERSON_RECOGNIZED,
+            >>>     greet_person
+            >>> )
+        """
+        if self.event_manager is None:
+            logger.warning("Event system not enabled - use enable_events=True")
+            return None
+        
+        return self.event_manager.add_callback(event_type, callback)
+    
+    def remove_event_callback(self, callback_id: int) -> bool:
+        """
+        Remove an event callback.
+        
+        Args:
+            callback_id: ID returned from add_event_callback()
+            
+        Returns:
+            True if removed successfully
+        """
+        if self.event_manager is None:
+            return False
+        
+        return self.event_manager.remove_callback(callback_id)
+    
+    def get_recent_events(self, limit: Optional[int] = None) -> List[RecognitionEvent]:
+        """
+        Get recent recognition events.
+        
+        Args:
+            limit: Max events to return (None = all)
+            
+        Returns:
+            List of recent events (most recent first)
+        """
+        if self.event_manager is None:
+            return []
+        
+        return self.event_manager.get_recent_events(limit)
+    
+    def get_event_stats(self) -> Dict[str, Any]:
+        """
+        Get event system statistics.
+        
+        Returns:
+            Dictionary with event statistics
+        """
+        if self.event_manager is None:
+            return {}
+        
+        return self.event_manager.get_stats()
     
     def run_live(
         self,
