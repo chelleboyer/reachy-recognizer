@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reachy Mini Move Controller</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --font-sans: 'Inter', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --bg-deep: #1a1a1a;
+            --bg-main: #202022;
+            --bg-panel: #252528;
+            --bg-header: #2c2c2f;
+            --border-color: #363639;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0a0;
+            --accent-primary: #007acc;
+            --accent-primary-hover: #0098ff;
+            --accent-secondary: #3e3e42;
+            --accent-secondary-hover: #4f4f52;
+            --status-connected: #34d399;
+            --status-disconnected: #f87171;
+            --status-busy: #fbbf24;
+            --danger: #f47174;
+            --success: #4ec9b0;
+            --info: #4fc1ff;
+            --warning-bg: #3a2a1a;
+            --warning-text: #dcdcaa;
+            --warning-border: #dcdcaa;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent-secondary-hover) var(--bg-main);
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg-main);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: var(--bg-header);
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .header h1 {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .main-container {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 200px;
+            background: var(--bg-panel);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .sidebar-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 0;
+        }
+
+        .move-item {
+            padding: 8px 16px;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+            transition: all 0.2s ease;
+            font-size: 13px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .move-item:hover {
+            background: var(--bg-header);
+            color: var(--accent-primary-hover);
+        }
+
+        /* Content area */
+        .content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panels {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 16px;
+            padding: 16px;
+            overflow-y: auto;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-height: 300px; /* Ensure panels have a min height */
+        }
+
+        .panel-header {
+            padding: 12px 16px;
+            background: var(--bg-header);
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .panel-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        /* Controls */
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            letter-spacing: 0.5px;
+        }
+
+        .slider-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .slider-label .value {
+            color: var(--info);
+            font-weight: 500;
+            font-family: var(--font-mono);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 5px;
+            border-radius: 3px;
+            background: var(--border-color);
+            outline: none;
+            appearance: none;
+            -webkit-appearance: none;
+            accent-color: var(--accent-primary);
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--accent-primary);
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid var(--bg-panel);
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: var(--accent-primary-hover);
+            transform: scale(1.1);
+        }
+
+        /* Buttons */
+        .btn {
+            background: var(--accent-primary);
+            color: #ffffff;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 13px;
+            font-family: inherit;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn:hover {
+            background: var(--accent-primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(0, 122, 204, 0.2);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+
+        .btn:disabled {
+            background: var(--border-color);
+            cursor: not-allowed;
+            opacity: 0.6;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background: var(--accent-secondary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--accent-secondary-hover);
+            box-shadow: none;
+        }
+
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+        }
+        .btn-group > .btn {
+            flex: 1;
+        }
+
+        /* Moves Grid */
+        .moves-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 12px;
+        }
+
+        .move-card {
+            background: var(--bg-main);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 12px;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-size: 12px;
+        }
+
+        .move-card:hover {
+            border-color: var(--accent-primary);
+            transform: translateY(-2px);
+        }
+
+        .move-card-title {
+            font-weight: 600;
+            font-family: var(--font-mono);
+            word-break: break-word;
+        }
+
+        .move-card-desc {
+            font-size: 11px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+            flex: 1;
+        }
+
+        .move-card-duration {
+            font-size: 11px;
+            color: var(--info);
+            font-family: var(--font-mono);
+        }
+
+        /* Banners & Messages */
+        .warning-banner {
+            background: var(--warning-bg);
+            border-left: 4px solid var(--warning-border);
+            border-radius: 4px;
+            padding: 10px 12px;
+            font-size: 12px;
+            color: var(--warning-text);
+            line-height: 1.5;
+        }
+
+        .message {
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            animation: slideIn 0.3s ease-out;
+            border-left: 4px solid;
+            font-weight: 500;
+        }
+        .message.success { background-color: rgba(78, 201, 176, 0.1); border-color: var(--success); color: var(--success); }
+        .message.error { background-color: rgba(244, 113, 116, 0.1); border-color: var(--danger); color: var(--danger); }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Textarea */
+        textarea {
+            background: var(--bg-deep);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px;
+            font-family: var(--font-mono);
+            font-size: 13px;
+            resize: vertical;
+            flex: 1;
+            min-height: 120px;
+            transition: border-color 0.2s ease;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+
+        /* Status Bar */
+        .status-bar {
+            background: var(--accent-primary);
+            color: #ffffff;
+            padding: 4px 16px;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 24px;
+            flex-shrink: 0;
+            font-weight: 500;
+        }
+
+        .status-bar-left {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            transition: background-color 0.3s ease;
+        }
+        .status-indicator.connected { background: var(--status-connected); box-shadow: 0 0 8px var(--status-connected); }
+        .status-indicator.disconnected { background: var(--status-disconnected); }
+        .status-indicator.busy { background: var(--status-busy); animation: pulse 1s infinite; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 12px; }
+        ::-webkit-scrollbar-track { background: var(--bg-main); }
+        ::-webkit-scrollbar-thumb { background: var(--accent-secondary-hover); border-radius: 6px; border: 3px solid var(--bg-main); }
+        ::-webkit-scrollbar-thumb:hover { background: var(--border-color); }
+
+        /* Generate New Move Specific Styles */
+        .preset-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 6px;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 4px 0;
+        }
+
+        .checkbox-label input[type="checkbox"] {
+            accent-color: var(--accent-primary);
+            transform: scale(0.9);
+        }
+
+        .checkbox-label:hover {
+            color: var(--text-primary);
+        }
+
+        .move-info {
+            background: var(--bg-deep);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 8px 12px;
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            font-size: 11px;
+        }
+
+        .info-item {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .info-label {
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .info-item span:last-child {
+            color: var(--info);
+            font-family: var(--font-mono);
+        }
+
+        /* Enhanced textarea for code editing */
+        #generatedCode {
+            min-height: 200px;
+            font-family: var(--font-mono);
+            line-height: 1.4;
+        }
+
+        #generatedCode[readonly] {
+            background: var(--bg-deep);
+            opacity: 0.9;
+        }
+
+        #generatedCode:not([readonly]) {
+            background: var(--bg-main);
+            border-color: var(--accent-primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🤖 Reachy Mini Controller</h1>
+        <div class="header-buttons">
+            <button class="btn btn-secondary btn-small" onclick="resetRobot()">⏹️ Reset</button>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="sidebar">
+            <div class="sidebar-header">Quick Moves</div>
+            <div class="sidebar-content">
+                <div id="movesList"></div>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="panels">
+                <div class="panel">
+                    <div class="panel-header">📚 Pre-recorded Moves</div>
+                    <div class="panel-content">
+                        <div id="movesGrid" class="moves-grid"></div>
+                        <div id="movesMessage" style="display: none;"></div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">🎚️ Manual Control</div>
+                    <div class="panel-content">
+                        <div class="warning-banner"><strong>LIMITS:</strong> Pitch/Roll: ±40°, Yaw: ±180°</div>
+                        <div class="control-group">
+                            <label class="control-label">Head Rotation</label>
+                             <div class="slider-wrapper">
+                                <div class="slider-label"><span>Pitch</span><span class="value" id="val-pitch">0°</span></div>
+                                <input type="range" id="slider-pitch" min="-40" max="40" value="0" step="1" oninput="updateManualControl()">
+                            </div>
+                            <div class="slider-wrapper">
+                                <div class="slider-label"><span>Roll</span><span class="value" id="val-roll">0°</span></div>
+                                <input type="range" id="slider-roll" min="-40" max="40" value="0" step="1" oninput="updateManualControl()">
+                            </div>
+                            <div class="slider-wrapper">
+                                <div class="slider-label"><span>Yaw</span><span class="value" id="val-yaw">0°</span></div>
+                                <input type="range" id="slider-yaw" min="-45" max="45" value="0" step="1" oninput="updateManualControl()">
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label">Head Position (mm)</label>
+                             <div class="slider-wrapper">
+                                <div class="slider-label"><span>X</span><span class="value" id="val-x">0</span></div>
+                                <input type="range" id="slider-x" min="-50" max="50" value="0" step="1" oninput="updateManualControl()">
+                            </div>
+                            <div class="slider-wrapper">
+                                <div class="slider-label"><span>Y</span><span class="value" id="val-y">0</span></div>
+                                <input type="range" id="slider-y" min="-50" max="50" value="0" step="1" oninput="updateManualControl()">
+                            </div>
+                             <div class="slider-wrapper">
+                                <div class="slider-label"><span>Z</span><span class="value" id="val-z">0</span></div>
+                                <input type="range" id="slider-z" min="-50" max="50" value="0" step="1" oninput="updateManualControl()">
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label">Antennas</label>
+                             <div class="slider-wrapper">
+                                <div class="slider-label"><span>Left</span><span class="value" id="val-ant-left">0°</span></div>
+                                <input type="range" id="slider-ant-left" min="-90" max="90" value="0" step="1" oninput="updateManualControl()">
+                            </div>
+                            <div class="slider-wrapper">
+                                <div class="slider-label"><span>Right</span><span class="value" id="val-ant-right">0°</span></div>
+                                <input type="range" id="slider-ant-right" min="-90" max="90" value="0" step="1" oninput="updateManualControl()">
+                            </div>
+                        </div>
+                         <div class="control-group">
+                            <label class="control-label">Body Yaw</label>
+                            <div class="slider-wrapper">
+                                <div class="slider-label"><span>Rotation</span><span class="value" id="val-body-yaw">0°</span></div>
+                                <input type="range" id="slider-body-yaw" min="-180" max="180" value="0" step="1" oninput="updateManualControl()">
+                            </div>
+                        </div>
+                        <button class="btn btn-secondary" onclick="resetAllControls()">Reset Sliders</button>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">✨ Generate New Move</div>
+                    <div class="panel-content">
+                        <div id="generatorStatusBanner" class="warning-banner" style="display: none;">
+                            <strong>OPENAI NOT CONFIGURED.</strong> Set API key in your .env file.
+                        </div>
+                        
+                        <!-- Quick Presets -->
+                        <div class="control-group">
+                            <label class="control-label">Quick Presets</label>
+                            <div class="preset-buttons">
+                                <button class="btn btn-small btn-secondary" onclick="setPreset('A curious robot looking around cautiously')">👀 Curious Look</button>
+                                <button class="btn btn-small btn-secondary" onclick="setPreset('A happy bouncing dance with head bobs')">🎉 Happy Dance</button>
+                                <button class="btn btn-small btn-secondary" onclick="setPreset('A shy robot peeking left then right nervously')">😊 Shy Peek</button>
+                                <button class="btn btn-small btn-secondary" onclick="setPreset('An excited nodding yes motion')">✅ Excited Nod</button>
+                                <button class="btn btn-small btn-secondary" onclick="setPreset('A sleepy robot slowly swaying side to side')">😴 Sleepy Sway</button>
+                                <button class="btn btn-small btn-secondary" onclick="setPreset('A dramatic head shake no with attitude')">❌ Dramatic No</button>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label">Description</label>
+                            <textarea id="generateDescription" placeholder="e.g., a shy peek to the left, then a quick look right"></textarea>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label class="control-label">Duration (beats)</label>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <input type="range" id="generateDuration" min="1" max="16" value="4" step="0.5" oninput="document.getElementById('durationValue').textContent = this.value">
+                                <span id="durationValue" class="slider-label value" style="min-width: 30px;">4</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Advanced Options -->
+                        <div class="control-group">
+                            <label class="control-label">Style Options</label>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="smoothMovement" checked> Smooth Movement
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="useAntennas" checked> Use Antennas
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="includeBodyYaw"> Body Rotation
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="expressiveMode" checked> Expressive
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="btn-group">
+                            <button id="generateBtn" class="btn" onclick="generateMove()">✨ Generate</button>
+                            <button class="btn btn-secondary" onclick="clearGeneration()">🗑️ Clear</button>
+                        </div>
+                        
+                        <div id="generatedCodeContainer" style="display: none; flex-direction: column; gap: 8px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <label class="control-label">Generated Code</label>
+                                <div style="display: flex; gap: 4px;">
+                                    <button class="btn btn-small btn-secondary" onclick="saveGeneratedMove()">💾 Save</button>
+                                    <button class="btn btn-small btn-secondary" onclick="loadMoveFile()">📁 Load</button>
+                                </div>
+                            </div>
+                            <textarea id="generatedCode"></textarea>
+                            <div class="btn-group">
+                                <button class="btn" onclick="playGeneratedCode()">▶️ Play</button>
+                                <button class="btn btn-secondary" onclick="copyGeneratedCode()">📋 Copy</button>
+                                <button class="btn btn-secondary" onclick="editGeneratedCode()">✏️ Edit</button>
+                            </div>
+                            
+                            <!-- Move Information -->
+                            <div id="moveInfo" class="move-info" style="display: none;">
+                                <div class="info-item">
+                                    <span class="info-label">Function:</span>
+                                    <span id="functionName">-</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Lines:</span>
+                                    <span id="codeLines">-</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Complexity:</span>
+                                    <span id="moveComplexity">-</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Hidden file input for loading moves -->
+                        <input type="file" id="fileInput" accept=".py,.txt" style="display: none;" onchange="handleFileLoad(event)">
+                        
+                        <div id="generateMessage" style="display: none; margin-top: 8px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="status-bar">
+        <div class="status-bar-left">
+            <span class="status-indicator connected" id="statusIndicator"></span>
+            <span id="statusText">Connected</span>
+        </div>
+        <div><span id="statusTime"></span></div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const DOMElements = {
+            statusIndicator: document.getElementById('statusIndicator'),
+            statusText: document.getElementById('statusText'),
+            statusTime: document.getElementById('statusTime'),
+            movesGrid: document.getElementById('movesGrid'),
+            movesList: document.getElementById('movesList'),
+            generateBtn: document.getElementById('generateBtn'),
+            generatedCode: document.getElementById('generatedCode'),
+            generatedCodeContainer: document.getElementById('generatedCodeContainer'),
+            generatorStatusBanner: document.getElementById('generatorStatusBanner')
+        };
+
+        // State
+        let availableMoves = [];
+        let controlUpdateTimer = null;
+        const controlThrottleMs = 50;
+
+        // API Calls
+        const api = {
+            get: (endpoint) => fetch(endpoint),
+            post: (endpoint, body) => fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            })
+        };
+
+        // UI Updates
+        function setStatus(status, text) {
+            DOMElements.statusIndicator.className = `status-indicator ${status}`;
+            DOMElements.statusText.textContent = text || (status.charAt(0).toUpperCase() + status.slice(1));
+        }
+
+        function showMessage(text, type, panelId) {
+            const container = document.getElementById(`${panelId}Message`);
+            if (!container) return;
+            container.innerHTML = `<div class="message ${type}">${text}</div>`;
+            container.style.display = 'block';
+            setTimeout(() => { container.style.display = 'none'; container.innerHTML = ''; }, 3000);
+        }
+
+        // Render Functions
+        function renderMoves() {
+            DOMElements.movesGrid.innerHTML = availableMoves.map(move => `
+                <div class="move-card">
+                    <div class="move-card-title">${move.name}</div>
+                    <div class="move-card-desc">${move.description}</div>
+                    <div class="move-card-duration">⏱️ ${move.default_duration_beats} beats</div>
+                    <button class="btn btn-small" onclick="playMove('${move.name}')">▶️ Play</button>
+                </div>
+            `).join('');
+            DOMElements.movesList.innerHTML = availableMoves.map(move => `
+                <div class="move-item" onclick="playMove('${move.name}')" title="${move.description}">${move.name}</div>
+            `).join('');
+        }
+
+        // Event Handlers & Logic
+        async function loadAvailableMoves() {
+            try {
+                const response = await api.get('/api/moves');
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                availableMoves = data.moves;
+                renderMoves();
+            } catch (error) {
+                showMessage(`Error loading moves: ${error.message}`, 'error', 'moves');
+                setStatus('disconnected');
+            }
+        }
+
+        async function playMove(moveName) {
+            setStatus('busy', `Playing: ${moveName}`);
+            try {
+                const response = await api.post('/api/moves/play', { move_name: moveName });
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.detail);
+                }
+                showMessage(`Finished: ${moveName}`, 'success', 'moves');
+            } catch (error) {
+                showMessage(`Error playing move: ${error.message}`, 'error', 'moves');
+            } finally {
+                setStatus('connected');
+            }
+        }
+
+        function updateManualControl() {
+            const sliders = {
+                pitch: { id: 'val-pitch', suffix: '°' }, roll: { id: 'val-roll', suffix: '°' }, yaw: { id: 'val-yaw', suffix: '°' },
+                x: { id: 'val-x', suffix: '' }, y: { id: 'val-y', suffix: '' }, z: { id: 'val-z', suffix: '' },
+                'ant-left': { id: 'val-ant-left', suffix: '°' }, 'ant-right': { id: 'val-ant-right', suffix: '°' },
+                'body-yaw': { id: 'val-body-yaw', suffix: '°' }
+            };
+            const payload = {};
+            for (const [key, config] of Object.entries(sliders)) {
+                const slider = document.getElementById(`slider-${key}`);
+                const value = parseFloat(slider.value);
+                document.getElementById(config.id).textContent = `${value}${config.suffix}`;
+
+                if (key.startsWith('ant')) {
+                    payload[`antenna_${key.split('-')[1]}`] = value * (Math.PI / 180);
+                } else if (key.startsWith('body')) {
+                     payload['body_yaw'] = value;
+                } else if (['x', 'y', 'z'].includes(key)) {
+                    payload[`head_${key}`] = value;
+                } else {
+                    payload[`head_${key}`] = value;
+                }
+            }
+            
+            clearTimeout(controlUpdateTimer);
+            controlUpdateTimer = setTimeout(() => api.post('/api/manual-control', payload), controlThrottleMs);
+        }
+
+        function resetAllControls() {
+            document.querySelectorAll('input[type="range"]').forEach(el => {
+                if (el.id !== 'generateDuration') el.value = 0;
+            });
+            updateManualControl();
+        }
+
+        async function generateMove() {
+            const description = document.getElementById('generateDescription').value;
+            if (!description.trim()) {
+                return showMessage('Please enter a description.', 'error', 'generate');
+            }
+            
+            // Get style options
+            const smoothMovement = document.getElementById('smoothMovement').checked;
+            const useAntennas = document.getElementById('useAntennas').checked;
+            const includeBodyYaw = document.getElementById('includeBodyYaw').checked;
+            const expressiveMode = document.getElementById('expressiveMode').checked;
+            
+            // Build enhanced description with style hints
+            let enhancedDescription = description;
+            if (smoothMovement) enhancedDescription += " with smooth, flowing motions";
+            if (!useAntennas) enhancedDescription += " without antenna movement";
+            if (includeBodyYaw) enhancedDescription += " including body rotation";
+            if (expressiveMode) enhancedDescription += " with expressive, animated personality";
+            
+            setStatus('busy', 'Generating...');
+            DOMElements.generateBtn.disabled = true;
+            DOMElements.generateBtn.innerHTML = '⏳ Generating...';
+            
+            try {
+                const response = await api.post('/api/moves/generate', {
+                    description: enhancedDescription,
+                    duration_beats: parseFloat(document.getElementById('generateDuration').value)
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.detail);
+                
+                DOMElements.generatedCode.value = data.code;
+                DOMElements.generatedCode.readOnly = true;
+                DOMElements.generatedCodeContainer.style.display = 'flex';
+                updateMoveInfo(data.code);
+                showMessage('Move generated successfully!', 'success', 'generate');
+            } catch (error) {
+                showMessage(`Generation failed: ${error.message}`, 'error', 'generate');
+                if (error.message.includes("OpenAI not configured")) {
+                    DOMElements.generatorStatusBanner.style.display = 'block';
+                }
+            } finally {
+                setStatus('connected');
+                DOMElements.generateBtn.disabled = false;
+                DOMElements.generateBtn.innerHTML = '✨ Generate';
+            }
+        }
+
+        function setPreset(description) {
+            document.getElementById('generateDescription').value = description;
+        }
+
+        function clearGeneration() {
+            document.getElementById('generateDescription').value = '';
+            document.getElementById('generateDuration').value = 4;
+            document.getElementById('durationValue').textContent = '4';
+            DOMElements.generatedCodeContainer.style.display = 'none';
+            DOMElements.generatedCode.value = '';
+            document.getElementById('moveInfo').style.display = 'none';
+        }
+
+        function updateMoveInfo(code) {
+            const lines = code.split('\n').length;
+            const functionMatch = code.match(/def\s+(\w+)/);
+            const functionName = functionMatch ? functionMatch[1] : 'Unknown';
+            
+            // Simple complexity analysis
+            const hasLoops = /for|while/.test(code);
+            const hasConditionals = /if|elif|else/.test(code);
+            const hasMultipleAxes = (code.match(/atomic_|MoveOffsets/g) || []).length > 2;
+            
+            let complexity = 'Simple';
+            if (hasLoops && hasConditionals && hasMultipleAxes) complexity = 'Complex';
+            else if ((hasLoops || hasConditionals) && hasMultipleAxes) complexity = 'Moderate';
+            
+            document.getElementById('functionName').textContent = functionName;
+            document.getElementById('codeLines').textContent = lines;
+            document.getElementById('moveComplexity').textContent = complexity;
+            document.getElementById('moveInfo').style.display = 'flex';
+        }
+
+        function editGeneratedCode() {
+            const codeTextarea = DOMElements.generatedCode;
+            codeTextarea.readOnly = !codeTextarea.readOnly;
+            
+            if (codeTextarea.readOnly) {
+                updateMoveInfo(codeTextarea.value);
+                showMessage('Code saved and locked for playback', 'success', 'generate');
+            } else {
+                showMessage('Code unlocked for editing', 'success', 'generate');
+            }
+        }
+
+        function saveGeneratedMove() {
+            const code = DOMElements.generatedCode.value;
+            if (!code) return showMessage('No code to save', 'error', 'generate');
+            
+            const functionMatch = code.match(/def\s+(\w+)/);
+            const functionName = functionMatch ? functionMatch[1] : 'generated_move';
+            
+            const blob = new Blob([code], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${functionName}.py`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showMessage('Move saved to file!', 'success', 'generate');
+        }
+
+        function loadMoveFile() {
+            document.getElementById('fileInput').click();
+        }
+
+        function handleFileLoad(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                DOMElements.generatedCode.value = content;
+                DOMElements.generatedCode.readOnly = false;
+                DOMElements.generatedCodeContainer.style.display = 'flex';
+                updateMoveInfo(content);
+                showMessage(`Loaded: ${file.name}`, 'success', 'generate');
+            };
+            reader.readAsText(file);
+            
+            // Reset the input
+            event.target.value = '';
+        }
+
+        async function playGeneratedCode() {
+            const code = DOMElements.generatedCode.value;
+            if (!code) return;
+            setStatus('busy', 'Playing generated move...');
+            try {
+                const response = await api.post('/api/moves/play-generated', {
+                    code,
+                    duration_beats: parseFloat(document.getElementById('generateDuration').value)
+                });
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.detail);
+                }
+                showMessage('Finished playing generated move.', 'success', 'generate');
+            } catch (error) {
+                showMessage(`Execution Error: ${error.message}`, 'error', 'generate');
+            } finally {
+                setStatus('connected');
+            }
+        }
+
+        function copyGeneratedCode() {
+            navigator.clipboard.writeText(DOMElements.generatedCode.value)
+                .then(() => showMessage('Code copied to clipboard!', 'success', 'generate'))
+                .catch(() => showMessage('Failed to copy code.', 'error', 'generate'));
+        }
+
+        async function resetRobot() {
+            setStatus('busy', 'Resetting...');
+            await api.post('/api/reset');
+            resetAllControls();
+            setStatus('connected');
+        }
+
+        // Initialization
+        function init() {
+            loadAvailableMoves();
+            setInterval(() => {
+                DOMElements.statusTime.textContent = new Date().toLocaleTimeString();
+            }, 1000);
+            // Initial UI sync
+             document.querySelectorAll('input[type="range"][oninput="updateManualControl()"]').forEach(el => {
+                const event = new Event('input');
+                el.dispatchEvent(event);
+            });
+        }
+
+        init();
+    </script>
+</body>
+</html>
+

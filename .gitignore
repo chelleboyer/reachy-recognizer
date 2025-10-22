@@ -1,0 +1,50 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+venv/
+env/
+
+# Environment variables
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project-specific
+# Keep models directory structure but ignore large model files
+models/*.onnx
+models/*.pb
+models/*.caffemodel
+
+# Face database (contains personal data)
+faces.json
+faces.json.bak
+*.json.bak
+
+# Test outputs
+test_output/
+*.log
+
+# Temporary files
+*.tmp
+*.bak
+.pytest_cache/
+
+# UV lock file (optional - some projects include it)
+# uv.lock
