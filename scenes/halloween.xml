@@ -1,0 +1,170 @@
+<mujoco model="halloween_scene">
+
+    <!-- Include Reachy Mini robot model -->
+    <include file="../reachy_mini.xml" />
+    <compiler meshdir="../assets" texturedir="../assets" />
+
+    <!-- Visual settings for spooky Halloween atmosphere -->
+    <visual>
+        <!-- Dim orange/purple lighting for Halloween vibe -->
+        <headlight diffuse="0.8 0.5 0.3" ambient="0.3 0.2 0.4" specular="0.4 0.3 0.2" />
+        <rgba haze="0.2 0.1 0.3 1" />
+        <global azimuth="160" elevation="-15" offwidth="1920" offheight="1080"/>
+        <quality shadowsize="4096"/>
+        <map force="0.1" fogstart="2" fogend="6"/>
+    </visual>
+    
+    <asset>
+        <!-- Halloween color palette -->
+        
+        <!-- Dark purple/blue night sky -->
+        <texture type="skybox" builtin="gradient" 
+                 rgb1="0.1 0.05 0.2" rgb2="0.05 0.02 0.15" 
+                 width="512" height="3072" />
+        
+        <!-- Dark ground with subtle texture -->
+        <texture type="2d" name="ground_texture" builtin="checker" 
+                 rgb1="0.15 0.12 0.10" rgb2="0.12 0.10 0.08"
+                 mark="none"
+                 width="512" height="512" />
+        
+        <material name="ground_material" texture="ground_texture" texuniform="true" 
+                  texrepeat="10 10" specular="0.1" shininess="0.05" />
+        
+        <!-- Orange pumpkin material -->
+        <material name="pumpkin_orange" rgba="0.95 0.45 0.1 1.0" 
+                  specular="0.3" shininess="0.2" />
+        
+        <!-- Dark pumpkin features (eyes, mouth) -->
+        <material name="pumpkin_dark" rgba="0.1 0.08 0.05 1.0" 
+                  emission="0.3" specular="0.1" />
+        
+        <!-- Glowing jack-o-lantern interior -->
+        <material name="pumpkin_glow" rgba="1.0 0.6 0.1 1.0" 
+                  emission="1.2" specular="0.2" />
+        
+        <!-- Green stem -->
+        <material name="pumpkin_stem" rgba="0.2 0.4 0.15 1.0" 
+                  specular="0.15" shininess="0.1" />
+        
+        <!-- Fog/mist effect -->
+        <material name="mist" rgba="0.4 0.3 0.5 0.3" 
+                  specular="0.0" shininess="0.0" />
+    </asset>
+
+    <worldbody>
+        
+        <!-- Halloween lighting: Orange and purple -->
+        
+        <!-- Main orange light (like candlelight) -->
+        <light name="candle_light_main" pos="0 1.5 0.3" dir="0 0 1" directional="false" 
+               diffuse="1.0 0.5 0.1" specular="0.8 0.4 0.1" castshadow="true"/>
+        
+        <!-- Secondary pumpkin glow -->
+        <light name="pumpkin_glow_left" pos="-0.8 2 0.3" dir="0 0 1" directional="false" 
+               diffuse="0.9 0.4 0.1" specular="0.5 0.3 0.1" castshadow="false"/>
+        
+        <light name="pumpkin_glow_right" pos="0.8 2 0.3" dir="0 0 1" directional="false" 
+               diffuse="0.9 0.4 0.1" specular="0.5 0.3 0.1" castshadow="false"/>
+        
+        <!-- Dim purple ambient (moonlight) -->
+        <light name="moonlight" directional="true" pos="2 2 5" dir="-0.3 -0.3 -1"
+               diffuse="0.2 0.15 0.3" specular="0.1 0.08 0.15" castshadow="true"/>
+        
+        <!-- Ground -->
+        <geom name="ground" type="plane" size="8 8 0.1" pos="0 0 0"
+              material="ground_material" condim="3" friction="1 0.005 0.0001"/>
+        
+        <!-- Central large jack-o-lantern (in front of Reachy) -->
+        <body name="pumpkin_center" pos="0 1.8 0.35">
+            <!-- Main pumpkin body -->
+            <geom name="pumpkin_center_body" type="sphere" size="0.35" 
+                  material="pumpkin_orange" mass="2"/>
+            
+            <!-- Stem -->
+            <geom name="pumpkin_center_stem" type="cylinder" size="0.04 0.08" 
+                  pos="0 0 0.35" material="pumpkin_stem"/>
+            
+            <!-- Jack-o-lantern face - left eye -->
+            <geom name="pumpkin_center_eye_left" type="box" size="0.06 0.02 0.08" 
+                  pos="-0.12 0.32 0.08" euler="0 20 0" material="pumpkin_dark"/>
+            
+            <!-- Right eye -->
+            <geom name="pumpkin_center_eye_right" type="box" size="0.06 0.02 0.08" 
+                  pos="0.12 0.32 0.08" euler="0 -20 0" material="pumpkin_dark"/>
+            
+            <!-- Nose (triangle) -->
+            <geom name="pumpkin_center_nose" type="box" size="0.04 0.02 0.06" 
+                  pos="0 0.33 -0.02" euler="0 0 0" material="pumpkin_dark"/>
+            
+            <!-- Mouth (big grin) -->
+            <geom name="pumpkin_center_mouth" type="box" size="0.18 0.02 0.05" 
+                  pos="0 0.32 -0.12" euler="0 0 0" material="pumpkin_dark"/>
+            
+            <!-- Glowing interior (visible through face) -->
+            <geom name="pumpkin_center_glow" type="sphere" size="0.25" 
+                  material="pumpkin_glow"/>
+        </body>
+        
+        <!-- Left pumpkin (smaller) -->
+        <body name="pumpkin_left" pos="-0.8 2.2 0.25">
+            <geom name="pumpkin_left_body" type="sphere" size="0.25" 
+                  material="pumpkin_orange" mass="1"/>
+            <geom name="pumpkin_left_stem" type="cylinder" size="0.03 0.06" 
+                  pos="0 0 0.25" material="pumpkin_stem"/>
+            <!-- Simple face -->
+            <geom name="pumpkin_left_eye_l" type="box" size="0.04 0.02 0.05" 
+                  pos="-0.08 0.23 0.05" material="pumpkin_dark"/>
+            <geom name="pumpkin_left_eye_r" type="box" size="0.04 0.02 0.05" 
+                  pos="0.08 0.23 0.05" material="pumpkin_dark"/>
+            <geom name="pumpkin_left_mouth" type="box" size="0.12 0.02 0.04" 
+                  pos="0 0.23 -0.08" material="pumpkin_dark"/>
+            <geom name="pumpkin_left_glow" type="sphere" size="0.18" 
+                  material="pumpkin_glow"/>
+        </body>
+        
+        <!-- Right pumpkin (smaller) -->
+        <body name="pumpkin_right" pos="0.8 2.2 0.25">
+            <geom name="pumpkin_right_body" type="sphere" size="0.25" 
+                  material="pumpkin_orange" mass="1"/>
+            <geom name="pumpkin_right_stem" type="cylinder" size="0.03 0.06" 
+                  pos="0 0 0.25" material="pumpkin_stem"/>
+            <!-- Simple face -->
+            <geom name="pumpkin_right_eye_l" type="box" size="0.04 0.02 0.05" 
+                  pos="-0.08 0.23 0.05" material="pumpkin_dark"/>
+            <geom name="pumpkin_right_eye_r" type="box" size="0.04 0.02 0.05" 
+                  pos="0.08 0.23 0.05" material="pumpkin_dark"/>
+            <geom name="pumpkin_right_mouth" type="box" size="0.12 0.02 0.04" 
+                  pos="0 0.23 -0.08" material="pumpkin_dark"/>
+            <geom name="pumpkin_right_glow" type="sphere" size="0.18" 
+                  material="pumpkin_glow"/>
+        </body>
+        
+        <!-- Background pumpkins (smaller, further away) -->
+        <body name="pumpkin_back_1" pos="-1.2 4 0.15">
+            <geom name="pumpkin_back_1_body" type="sphere" size="0.15" 
+                  material="pumpkin_orange" mass="0.5"/>
+            <geom name="pumpkin_back_1_glow" type="sphere" size="0.10" 
+                  material="pumpkin_glow"/>
+        </body>
+        
+        <body name="pumpkin_back_2" pos="1.2 4 0.15">
+            <geom name="pumpkin_back_2_body" type="sphere" size="0.15" 
+                  material="pumpkin_orange" mass="0.5"/>
+            <geom name="pumpkin_back_2_glow" type="sphere" size="0.10" 
+                  material="pumpkin_glow"/>
+        </body>
+        
+        <body name="pumpkin_back_3" pos="0 4.5 0.18">
+            <geom name="pumpkin_back_3_body" type="sphere" size="0.18" 
+                  material="pumpkin_orange" mass="0.6"/>
+            <geom name="pumpkin_back_3_glow" type="sphere" size="0.12" 
+                  material="pumpkin_glow"/>
+        </body>
+        
+        <!-- Optional: Low fog/mist effect -->
+        <geom name="mist_1" type="box" size="3 3 0.05" pos="0 3 0.02" 
+              material="mist"/>
+        
+    </worldbody>
+</mujoco>

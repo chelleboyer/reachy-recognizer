@@ -1,0 +1,157 @@
+<mujoco model="severance_scene">
+
+    <!-- Include Reachy Mini robot model -->
+    <include file="../reachy_mini.xml" />
+    <compiler meshdir="../assets" texturedir="../assets" />
+
+    <!-- Visual settings for Severance aesthetic -->
+    <visual>
+        <!-- Cool, even lighting like fluorescent office -->
+        <headlight diffuse="0.88 0.90 0.95" ambient="0.5 0.52 0.55" specular="0.3 0.3 0.35" />
+        <rgba haze="0.96 0.96 0.94 1" />
+        <!-- Camera positioned in front of Reachy, looking down the hallway -->
+        <global azimuth="180" elevation="-5" offwidth="1920" offheight="1080"/>
+        <quality shadowsize="4096"/>
+        <map force="0.1" fogstart="3" fogend="10"/>
+    </visual>
+    
+    <asset>
+        <!-- Severance-inspired color palette (matching reference image) -->
+        
+        <!-- Sky/background - Very light neutral -->
+        <texture type="skybox" builtin="flat" rgb1="0.94 0.94 0.94" width="512" height="512" />
+        
+        <!-- Darker floor - charcoal gray with subtle texture -->
+        <texture type="2d" name="floor_texture" builtin="flat" 
+                 rgb1="0.45 0.45 0.45"
+                 width="512" height="512" />
+        
+        <material name="floor_material" texture="floor_texture" texuniform="true" 
+                  specular="0.3" shininess="0.25" reflectance="0.12" />
+        
+        <!-- Very light walls - almost white with slight gray -->
+        <material name="wall_material" rgba="0.97 0.97 0.97 1.0" 
+                  specular="0.15" shininess="0.08" />
+        
+        <!-- Wall panel lines (subtle recessed appearance) -->
+        <material name="wall_panel_material" rgba="0.94 0.94 0.94 1.0" 
+                  specular="0.12" shininess="0.06" />
+        
+        <!-- Ceiling - medium gray (darker than walls, matching reference) -->
+        <material name="ceiling_material" rgba="0.75 0.75 0.75 1.0" 
+                  specular="0.08" shininess="0.04" />
+        
+        <!-- Dark baseboards and floor lines -->
+        <material name="baseboard_material" rgba="0.15 0.15 0.15 1.0" 
+                  specular="0.25" shininess="0.15" />
+        
+        <!-- Light fixtures - bright white for recessed lights -->
+        <material name="light_fixture_material" rgba="0.98 0.98 1.0 1.0" 
+                  emission="0.8" specular="0.1" shininess="0.05" />
+    </asset>
+
+    <worldbody>
+        
+        <!-- Lighting: Recessed linear ceiling lights (key Severance element) -->
+        <!-- Create series of lights to simulate recessed linear fixtures -->
+        <light name="recessed_1" pos="0 -4 2.9" dir="0 0 -1" directional="false" 
+               diffuse="0.95 0.95 0.98" specular="0.4 0.4 0.45" castshadow="true"/>
+        
+        <light name="recessed_2" pos="0 -2.5 2.9" dir="0 0 -1" directional="false" 
+               diffuse="0.95 0.95 0.98" specular="0.4 0.4 0.45" castshadow="true"/>
+        
+        <light name="recessed_3" pos="0 -1 2.9" dir="0 0 -1" directional="false" 
+               diffuse="0.95 0.95 0.98" specular="0.4 0.4 0.45" castshadow="true"/>
+        
+        <light name="recessed_4" pos="0 0.5 2.9" dir="0 0 -1" directional="false" 
+               diffuse="0.95 0.95 0.98" specular="0.4 0.4 0.45" castshadow="true"/>
+        
+        <light name="recessed_5" pos="0 2 2.9" dir="0 0 -1" directional="false" 
+               diffuse="0.95 0.95 0.98" specular="0.4 0.4 0.45" castshadow="true"/>
+        
+        <light name="recessed_6" pos="0 3.5 2.9" dir="0 0 -1" directional="false" 
+               diffuse="0.95 0.95 0.98" specular="0.4 0.4 0.45" castshadow="true"/>
+        
+        <!-- Soft ambient fill -->
+        <light name="ambient_fill" directional="true" pos="0 0 3" dir="0 0 -1"
+               diffuse="0.4 0.4 0.42" specular="0.05 0.05 0.05" castshadow="false"/>
+        
+        <!-- Floor - darker with black edge lines like in reference -->
+        <geom name="floor" type="plane" size="10 10 0.1" pos="0 0 0"
+              material="floor_material" condim="3" friction="1 0.005 0.0001"/>
+        
+        <!-- Black floor edge lines (converging perspective lines) -->
+        <geom name="floor_line_left" type="box" pos="-1.95 0 0.001" size="0.02 10 0.001" 
+              material="baseboard_material"/>
+        
+        <geom name="floor_line_right" type="box" pos="1.95 0 0.001" size="0.02 10 0.001" 
+              material="baseboard_material"/>
+        
+        <!-- Hallway walls - very light, nearly white -->
+        
+        <!-- Left wall with vertical panel segments -->
+        <geom name="wall_left_main" type="box" pos="-2.0 0 1.5" size="0.12 10 1.5" 
+              material="wall_material"/>
+        
+        <!-- Vertical panels on left wall (subtle segmentation) -->
+        <geom name="wall_left_panel_1" type="box" pos="-2.11 -3 1.5" size="0.01 0.8 1.5" 
+              material="wall_panel_material"/>
+        <geom name="wall_left_panel_2" type="box" pos="-2.11 -1 1.5" size="0.01 0.8 1.5" 
+              material="wall_panel_material"/>
+        <geom name="wall_left_panel_3" type="box" pos="-2.11 1 1.5" size="0.01 0.8 1.5" 
+              material="wall_panel_material"/>
+        <geom name="wall_left_panel_4" type="box" pos="-2.11 3 1.5" size="0.01 0.8 1.5" 
+              material="wall_panel_material"/>
+        
+        <!-- Right wall with vertical panel segments -->
+        <geom name="wall_right_main" type="box" pos="2.0 0 1.5" size="0.12 10 1.5" 
+              material="wall_material"/>
+        
+        <!-- Vertical panels on right wall -->
+        <geom name="wall_right_panel_1" type="box" pos="2.11 -3 1.5" size="0.01 0.8 1.5" 
+              material="wall_panel_material"/>
+        <geom name="wall_right_panel_2" type="box" pos="2.11 -1 1.5" size="0.01 0.8 1.5" 
+              material="wall_panel_material"/>
+        <geom name="wall_right_panel_3" type="box" pos="2.11 1 1.5" size="0.01 0.8 1.5" 
+              material="wall_panel_material"/>
+        <geom name="wall_right_panel_4" type="box" pos="2.11 3 1.5" size="0.01 0.8 1.5" 
+              material="wall_panel_material"/>
+        
+        <!-- Back wall -->
+        <geom name="wall_back" type="box" pos="0 -8 1.5" size="2.15 0.12 1.5" 
+              material="wall_material"/>
+        
+        <!-- Front wall sections (with gap for camera) -->
+        <geom name="wall_front_left" type="box" pos="-1.0 7 1.5" size="1.0 0.12 1.5" 
+              material="wall_material"/>
+        
+        <geom name="wall_front_right" type="box" pos="1.0 7 1.5" size="1.0 0.12 1.5" 
+              material="wall_material"/>
+        
+        <!-- Ceiling - gray/charcoal (darker than walls, like in reference) -->
+        <geom name="ceiling_main" type="box" pos="0 0 3.0" size="2.15 10 0.05" 
+              material="ceiling_material"/>
+        
+        <!-- Recessed light fixtures (white strips in ceiling) -->
+        <geom name="light_fixture_1" type="box" pos="0 -3.25 2.98" size="0.15 0.6 0.03" 
+              material="light_fixture_material"/>
+        <geom name="light_fixture_2" type="box" pos="0 -1.75 2.98" size="0.15 0.6 0.03" 
+              material="light_fixture_material"/>
+        <geom name="light_fixture_3" type="box" pos="0 -0.25 2.98" size="0.15 0.6 0.03" 
+              material="light_fixture_material"/>
+        <geom name="light_fixture_4" type="box" pos="0 1.25 2.98" size="0.15 0.6 0.03" 
+              material="light_fixture_material"/>
+        <geom name="light_fixture_5" type="box" pos="0 2.75 2.98" size="0.15 0.6 0.03" 
+              material="light_fixture_material"/>
+        <geom name="light_fixture_6" type="box" pos="0 4.25 2.98" size="0.15 0.6 0.03" 
+              material="light_fixture_material"/>
+        
+        <!-- Dark baseboards at floor level -->
+        <geom name="baseboard_left" type="box" pos="-2.0 0 0.05" size="0.13 10 0.05" 
+              material="baseboard_material"/>
+        
+        <geom name="baseboard_right" type="box" pos="2.0 0 0.05" size="0.13 10 0.05" 
+              material="baseboard_material"/>
+        
+    </worldbody>
+</mujoco>

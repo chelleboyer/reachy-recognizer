@@ -1,0 +1,226 @@
+<mujoco model="techlab_scene">
+
+    <!-- Include Reachy Mini robot model -->
+    <include file="../reachy_mini.xml" />
+    <compiler meshdir="../assets" texturedir="../assets" />
+
+    <!-- Visual settings for futuristic tech lab -->
+    <visual>
+        <!-- Balanced cool tech lighting - not too dark or bright -->
+        <headlight diffuse="0.7 0.75 0.85" ambient="0.4 0.45 0.55" specular="0.6 0.65 0.75" />
+        <rgba haze="0.15 0.2 0.3 1" />
+        <!-- Camera behind Reachy looking at the monitors -->
+        <global azimuth="0" elevation="-8" offwidth="1920" offheight="1080"/>
+        <quality shadowsize="4096"/>
+        <map force="0.1" fogstart="4" fogend="12"/>
+    </visual>
+    
+    <asset>
+        <!-- Futuristic tech lab color palette -->
+        
+        <!-- Deep blue/purple tech atmosphere -->
+        <texture type="skybox" builtin="gradient" 
+                 rgb1="0.15 0.2 0.35" rgb2="0.08 0.12 0.25" 
+                 width="512" height="3072" />
+        
+        <!-- High-tech floor with grid pattern -->
+        <texture type="2d" name="floor_grid" builtin="checker" 
+                 rgb1="0.25 0.28 0.32" rgb2="0.20 0.23 0.28"
+                 mark="edge" markrgb="0.4 0.6 0.8"
+                 width="512" height="512" />
+        
+        <material name="floor_material" texture="floor_grid" texuniform="true" 
+                  texrepeat="25 25" specular="0.6" shininess="0.4" reflectance="0.25" />
+        
+        <!-- Sleek metallic walls -->
+        <material name="wall_metal" rgba="0.35 0.38 0.42 1.0" 
+                  specular="0.7" shininess="0.5" reflectance="0.2" />
+        
+        <!-- Glowing cyan accent panels -->
+        <material name="panel_cyan" rgba="0.2 0.7 0.9 1.0" 
+                  emission="0.8" specular="0.4" shininess="0.3" />
+        
+        <!-- Glowing blue holographic displays -->
+        <material name="holo_blue" rgba="0.3 0.6 1.0 0.6" 
+                  emission="1.2" specular="0.5" />
+        
+        <!-- Neon pink/magenta accents -->
+        <material name="neon_pink" rgba="1.0 0.2 0.6 1.0" 
+                  emission="1.0" specular="0.6" />
+        
+        <!-- Glowing green status indicators -->
+        <material name="status_green" rgba="0.2 1.0 0.4 1.0" 
+                  emission="0.9" specular="0.4" />
+        
+        <!-- Dark tech panels -->
+        <material name="panel_dark" rgba="0.15 0.18 0.22 1.0" 
+                  specular="0.5" shininess="0.3" />
+        
+        <!-- White LED strips -->
+        <material name="led_white" rgba="0.95 0.95 1.0 1.0" 
+                  emission="1.3" specular="0.3" />
+    </asset>
+
+    <worldbody>
+        
+        <!-- Futuristic lighting: Cool blues and cyans with accent colors -->
+        
+        <!-- Main overhead cool lights -->
+        <light name="overhead_1" pos="-1 1 3.2" dir="0 0 -1" directional="false" 
+               diffuse="0.7 0.8 0.95" specular="0.6 0.7 0.85" castshadow="true"/>
+        
+        <light name="overhead_2" pos="1 1 3.2" dir="0 0 -1" directional="false" 
+               diffuse="0.7 0.8 0.95" specular="0.6 0.7 0.85" castshadow="true"/>
+        
+        <!-- Cyan accent uplighting -->
+        <light name="accent_cyan_left" pos="-2.2 2 0.5" dir="1 0 0.5" directional="false" 
+               diffuse="0.3 0.8 1.0" specular="0.4 0.7 0.9" castshadow="false"/>
+        
+        <light name="accent_cyan_right" pos="2.2 2 0.5" dir="-1 0 0.5" directional="false" 
+               diffuse="0.3 0.8 1.0" specular="0.4 0.7 0.9" castshadow="false"/>
+        
+        <!-- Pink/magenta accent from behind -->
+        <light name="accent_pink_back" pos="0 5 1.5" dir="0 -1 -0.3" directional="false" 
+               diffuse="1.0 0.3 0.7" specular="0.8 0.3 0.6" castshadow="false"/>
+        
+        <!-- Cool ambient fill -->
+        <light name="ambient_tech" directional="true" pos="0 0 4" dir="0 0 -1"
+               diffuse="0.35 0.4 0.5" specular="0.2 0.25 0.35" castshadow="false"/>
+        
+        <!-- High-tech floor with glowing grid (lower to keep Reachy above it) -->
+        <geom name="floor" type="plane" size="10 10 0.1" pos="0 0 -0.1"
+              material="floor_material" condim="3" friction="1 0.005 0.0001"/>
+        
+        <!-- Glowing floor grid lines (neon accents) -->
+        <geom name="grid_line_1" type="box" size="0.01 10 0.001" pos="-1.5 0 -0.098" 
+              material="panel_cyan"/>
+        <geom name="grid_line_2" type="box" size="0.01 10 0.001" pos="1.5 0 -0.098" 
+              material="panel_cyan"/>
+        <geom name="grid_line_3" type="box" size="10 0.01 0.001" pos="0 -2 -0.098" 
+              material="neon_pink"/>
+        <geom name="grid_line_4" type="box" size="10 0.01 0.001" pos="0 2 -0.098" 
+              material="neon_pink"/>
+        
+        <!-- Metallic walls with tech panels -->
+        
+        <!-- Left wall with glowing panels -->
+        <geom name="wall_left_main" type="box" pos="-2.5 0 1.5" size="0.1 10 1.5" 
+              material="wall_metal"/>
+        
+        <!-- Cyan glowing panels on left wall -->
+        <geom name="panel_left_1" type="box" pos="-2.48 -2 1.2" size="0.03 0.6 0.3" 
+              material="panel_cyan"/>
+        <geom name="panel_left_2" type="box" pos="-2.48 0 1.2" size="0.03 0.6 0.3" 
+              material="panel_cyan"/>
+        <geom name="panel_left_3" type="box" pos="-2.48 2 1.2" size="0.03 0.6 0.3" 
+              material="panel_cyan"/>
+        
+        <!-- Right wall with glowing panels -->
+        <geom name="wall_right_main" type="box" pos="2.5 0 1.5" size="0.1 10 1.5" 
+              material="wall_metal"/>
+        
+        <!-- Pink/magenta glowing panels on right wall -->
+        <geom name="panel_right_1" type="box" pos="2.48 -2 1.2" size="0.03 0.6 0.3" 
+              material="neon_pink"/>
+        <geom name="panel_right_2" type="box" pos="2.48 0 1.2" size="0.03 0.6 0.3" 
+              material="neon_pink"/>
+        <geom name="panel_right_3" type="box" pos="2.48 2 1.2" size="0.03 0.6 0.3" 
+              material="neon_pink"/>
+        
+        <!-- Holographic displays (floating blue screens) - positioned in front of Reachy -->
+        
+        <!-- Left hologram -->
+        <body name="hologram_left" pos="-1.5 1.5 1.0">
+            <geom name="holo_screen_left" type="box" size="0.4 0.01 0.6" 
+                  material="holo_blue"/>
+            <!-- Frame -->
+            <geom name="holo_frame_left_top" type="box" size="0.42 0.02 0.02" 
+                  pos="0 0 0.61" material="panel_dark"/>
+            <geom name="holo_frame_left_bottom" type="box" size="0.42 0.02 0.02" 
+                  pos="0 0 -0.61" material="panel_dark"/>
+            <geom name="holo_frame_left_left" type="box" size="0.02 0.02 0.6" 
+                  pos="-0.41 0 0" material="panel_dark"/>
+            <geom name="holo_frame_left_right" type="box" size="0.02 0.02 0.6" 
+                  pos="0.41 0 0" material="panel_dark"/>
+        </body>
+        
+        <!-- Right hologram -->
+        <body name="hologram_right" pos="1.5 1.5 1.0">
+            <geom name="holo_screen_right" type="box" size="0.4 0.01 0.6" 
+                  material="holo_blue"/>
+            <!-- Frame -->
+            <geom name="holo_frame_right_top" type="box" size="0.42 0.02 0.02" 
+                  pos="0 0 0.61" material="panel_dark"/>
+            <geom name="holo_frame_right_bottom" type="box" size="0.42 0.02 0.02" 
+                  pos="0 0 -0.61" material="panel_dark"/>
+            <geom name="holo_frame_right_left" type="box" size="0.02 0.02 0.6" 
+                  pos="-0.41 0 0" material="panel_dark"/>
+            <geom name="holo_frame_right_right" type="box" size="0.02 0.02 0.6" 
+                  pos="0.41 0 0" material="panel_dark"/>
+        </body>
+        
+        <!-- Center hologram (in front of Reachy) -->
+        <body name="hologram_center" pos="0 2.5 1.2">
+            <geom name="holo_screen_center" type="box" size="0.8 0.01 0.8" 
+                  material="holo_blue"/>
+            <!-- Frame -->
+            <geom name="holo_frame_center_top" type="box" size="0.82 0.02 0.02" 
+                  pos="0 0 0.81" material="panel_dark"/>
+            <geom name="holo_frame_center_bottom" type="box" size="0.82 0.02 0.02" 
+                  pos="0 0 -0.81" material="panel_dark"/>
+            <geom name="holo_frame_center_left" type="box" size="0.02 0.02 0.8" 
+                  pos="-0.81 0 0" material="panel_dark"/>
+            <geom name="holo_frame_center_right" type="box" size="0.02 0.02 0.8" 
+                  pos="0.81 0 0" material="panel_dark"/>
+        </body>
+        
+        <!-- Tech pillars with status indicators - behind Reachy -->
+        
+        <!-- Left pillar -->
+        <body name="pillar_left" pos="-1.8 -2 0.6">
+            <geom name="pillar_left_main" type="cylinder" size="0.12 0.6" 
+                  material="panel_dark"/>
+            <!-- Status lights -->
+            <geom name="pillar_left_light_1" type="cylinder" size="0.13 0.03" 
+                  pos="0 0 0.45" material="status_green"/>
+            <geom name="pillar_left_light_2" type="cylinder" size="0.13 0.03" 
+                  pos="0 0 0.2" material="panel_cyan"/>
+            <geom name="pillar_left_light_3" type="cylinder" size="0.13 0.03" 
+                  pos="0 0 -0.1" material="neon_pink"/>
+        </body>
+        
+        <!-- Right pillar -->
+        <body name="pillar_right" pos="1.8 -2 0.6">
+            <geom name="pillar_right_main" type="cylinder" size="0.12 0.6" 
+                  material="panel_dark"/>
+            <!-- Status lights -->
+            <geom name="pillar_right_light_1" type="cylinder" size="0.13 0.03" 
+                  pos="0 0 0.45" material="status_green"/>
+            <geom name="pillar_right_light_2" type="cylinder" size="0.13 0.03" 
+                  pos="0 0 0.2" material="panel_cyan"/>
+            <geom name="pillar_right_light_3" type="cylinder" size="0.13 0.03" 
+                  pos="0 0 -0.1" material="neon_pink"/>
+        </body>
+        
+        <!-- LED strip lighting on ceiling -->
+        <geom name="ceiling_led_1" type="box" size="0.08 4 0.02" 
+              pos="-0.8 0 3.0" material="led_white"/>
+        <geom name="ceiling_led_2" type="box" size="0.08 4 0.02" 
+              pos="0.8 0 3.0" material="led_white"/>
+        
+        <!-- Tech floor platform (raised) -->
+        <geom name="platform_center" type="box" size="1.2 1.2 0.05" 
+              pos="0 0.5 0.05" material="panel_dark"/>
+        
+        <!-- Platform edge glow -->
+        <geom name="platform_glow_front" type="box" size="1.22 0.02 0.02" 
+              pos="0 1.7 0.06" material="panel_cyan"/>
+        <geom name="platform_glow_back" type="box" size="1.22 0.02 0.02" 
+              pos="0 -0.7 0.06" material="panel_cyan"/>
+        <geom name="platform_glow_left" type="box" size="0.02 1.22 0.02" 
+              pos="-1.2 0.5 0.06" material="neon_pink"/>
+        <geom name="platform_glow_right" type="box" size="0.02 1.22 0.02" 
+              pos="1.2 0.5 0.06" material="neon_pink"/>
+        
+    </worldbody>
+</mujoco>

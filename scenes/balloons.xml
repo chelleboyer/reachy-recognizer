@@ -1,0 +1,30 @@
+<mujoco model="Reachy Mini with Balloons">
+  <include file="../reachy_mini.xml"/>
+  <compiler meshdir="../assets" texturedir="../assets"/>
+  
+  <!-- Materials -->
+  <asset>
+    <texture name="grid" type="2d" builtin="checker" width="512" height="512" rgb2="0.2 0.2 0.2" rgb1="0.8 0.8 0.8"/>
+    <material name="grid" texture="grid" texrepeat="3 3" texuniform="true" reflectance=".3"/>
+  </asset>
+  
+  <visual>
+    <headlight ambient="0.5 0.5 0.5" diffuse="0.8 0.8 0.8" specular="0.3 0.3 0.3"/>
+    <map znear="0.01"/>
+    <quality shadowsize="2048"/>
+    <global azimuth="90" elevation="-10"/>
+  </visual>
+  
+  <worldbody>
+    <light pos="2 2 3" dir="-0.5 -0.5 -1" castshadow="true"/>
+    <light pos="-2 -2 3" dir="0.5 0.5 -1"/>
+    
+    <geom name="ground" type="plane" size="3 3 .05" pos="0 0 0" material="grid"/>
+    
+    <!-- Four walls with same grid material as floor -->
+    <geom name="back_wall" type="plane" size="3 3 .05" pos="0 -3 1.5" quat="0.707 0.707 0 0" material="grid"/>
+    <geom name="front_wall" type="plane" size="3 3 .05" pos="0 3 1.5" quat="0.707 -0.707 0 0" material="grid"/>
+    <geom name="left_wall" type="plane" size="3 3 .05" pos="-3 0 1.5" quat="0.5 0.5 0.5 0.5" material="grid"/>
+    <geom name="right_wall" type="plane" size="3 3 .05" pos="3 0 1.5" quat="0.5 -0.5 -0.5 0.5" material="grid"/>
+  </worldbody>
+</mujoco>
