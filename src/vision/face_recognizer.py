@@ -10,12 +10,20 @@ from typing import Optional, List, Tuple
 import logging
 import time
 
-from face_database import FaceDatabase
-from face_detector import FaceDetector
-from face_encoder import FaceEncoder
+from .face_database import FaceDatabase
+from .face_detector import FaceDetector
+from .face_encoder import FaceEncoder
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Try to import config (optional - falls back to defaults)
+try:
+    from ..config import get_config
+    _CONFIG_AVAILABLE = True
+except ImportError:
+    _CONFIG_AVAILABLE = False
+    logger.warning("Config not available, using default recognition settings")
 
 
 class FaceRecognizer:
@@ -37,7 +45,7 @@ class FaceRecognizer:
     def __init__(
         self,
         database: FaceDatabase,
-        threshold: float = DEFAULT_THRESHOLD,
+        threshold: Optional[float] = None,
         detector: Optional[FaceDetector] = None,
         encoder: Optional[FaceEncoder] = None
     ):
@@ -46,13 +54,26 @@ class FaceRecognizer:
         
         Args:
             database: FaceDatabase with known face encodings
-            threshold: Similarity threshold for recognition (0.0-1.0)
+            threshold: Similarity threshold for recognition (default from config or 0.6)
             detector: FaceDetector instance (creates new if None)
             encoder: FaceEncoder instance (creates new if None)
             
         Raises:
             ValueError: If threshold not in valid range
         """
+        # Load threshold from config if available
+        if _CONFIG_AVAILABLE and threshold is None:
+            try:
+                config = get_config()
+                threshold = config.face_recognition.threshold
+                logger.info(f"Loaded recognition threshold={threshold} from config")
+            except Exception as e:
+                logger.warning(f"Failed to load recognition config: {e}")
+        
+        # Use default if still None
+        if threshold is None:
+            threshold = self.DEFAULT_THRESHOLD
+        
         self.database = database
         self.set_threshold(threshold)
         self.detector = detector if detector is not None else FaceDetector()

@@ -31,6 +31,14 @@ except ImportError:
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Try to import config (optional - falls back to defaults)
+try:
+    from ..config import get_config
+    _CONFIG_AVAILABLE = True
+except ImportError:
+    _CONFIG_AVAILABLE = False
+    logger.warning("Config not available, using default behavior settings")
+
 
 @dataclass
 class BehaviorAction:
@@ -99,14 +107,27 @@ class BehaviorManager:
     of robot movements in response to recognition events.
     """
     
-    def __init__(self, reachy: Optional[object] = None, enable_robot: bool = True):
+    def __init__(self, reachy: Optional[object] = None, enable_robot: Optional[bool] = None):
         """
         Initialize behavior manager.
         
         Args:
             reachy: ReachyMini instance (None = auto-connect or mock)
-            enable_robot: If False, runs in simulation mode (no real movements)
+            enable_robot: If False, runs in simulation mode (default from config or True)
         """
+        # Load from config if available
+        if _CONFIG_AVAILABLE and enable_robot is None:
+            try:
+                config = get_config()
+                enable_robot = config.behaviors.enable_robot
+                logger.info(f"Loaded enable_robot={enable_robot} from config")
+            except Exception as e:
+                logger.warning(f"Failed to load behavior config: {e}")
+        
+        # Use default if still None
+        if enable_robot is None:
+            enable_robot = True
+        
         self.reachy = reachy
         self.enable_robot = enable_robot
         self.auto_connected = False
@@ -331,6 +352,90 @@ curious_tilt = Behavior(
         BehaviorAction(
             roll=0.0, pitch=0.0, yaw=0.0,
             duration=0.5,
+            blocking=True
+        )
+    ],
+    interruptible=True,
+    priority=6
+)
+
+# Unknown person greeting - welcoming head tilt (Story 3.4)
+unknown_greeting = Behavior(
+    name="unknown_greeting",
+    actions=[
+        # Look at camera/person
+        BehaviorAction(
+            roll=0.0, pitch=0.0, yaw=0.0,
+            duration=0.3,
+            blocking=True
+        ),
+        # Friendly tilt right with slight nod
+        BehaviorAction(
+            roll=10.0, pitch=-8.0, yaw=0.0,
+            duration=0.5,
+            blocking=True
+        ),
+        # Hold position
+        BehaviorAction(
+            roll=10.0, pitch=-8.0, yaw=0.0,
+            duration=0.3,
+            blocking=True
+        ),
+        # Return to center with slight welcoming nod
+        BehaviorAction(
+            roll=0.0, pitch=-5.0, yaw=0.0,
+            duration=0.4,
+            blocking=True
+        ),
+        # Final center position
+        BehaviorAction(
+            roll=0.0, pitch=0.0, yaw=0.0,
+            duration=0.3,
+            blocking=True
+        )
+    ],
+    interruptible=False,
+    priority=7
+)
+
+# Unknown person curious - inquisitive head movements (Story 3.4)
+unknown_curious = Behavior(
+    name="unknown_curious",
+    actions=[
+        # Tilt head left with curiosity
+        BehaviorAction(
+            roll=-15.0, pitch=10.0, yaw=0.0,
+            duration=0.5,
+            blocking=True
+        ),
+        # Pause to "study" the person
+        BehaviorAction(
+            roll=-15.0, pitch=10.0, yaw=0.0,
+            duration=0.5,
+            blocking=True
+        ),
+        # Tilt right - examining from another angle
+        BehaviorAction(
+            roll=15.0, pitch=10.0, yaw=0.0,
+            duration=0.5,
+            blocking=True
+        ),
+        # Hold right tilt
+        BehaviorAction(
+            roll=15.0, pitch=10.0, yaw=0.0,
+            duration=0.4,
+            blocking=True
+        ),
+        # Return to center with slight down nod (processing)
+        BehaviorAction(
+            roll=0.0, pitch=-8.0, yaw=0.0,
+            duration=0.5,
+            blocking=True
+        ),
+        # Final neutral position
+        BehaviorAction(
+            roll=0.0, pitch=0.0, yaw=0.0,
+            duration=0.3,
             blocking=True
         )
     ],

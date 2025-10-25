@@ -13,17 +13,26 @@ import numpy as np
 import time
 from typing import List, Tuple, Optional, Dict, Any, Callable
 from pathlib import Path
+from collections import deque
 import logging
 
-from camera_interface import CameraInterface
-from face_detector import FaceDetector
-from face_encoder import FaceEncoder
-from face_database import FaceDatabase
-from face_recognizer import FaceRecognizer
-from event_system import EventManager, RecognitionEvent, EventType
+from .camera_interface import CameraInterface
+from .face_detector import FaceDetector
+from .face_encoder import FaceEncoder
+from .face_database import FaceDatabase
+from .face_recognizer import FaceRecognizer
+from ..events.event_system import EventManager, RecognitionEvent, EventType
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Try to import config (optional - falls back to defaults)
+try:
+    from ..config import get_config
+    _CONFIG_AVAILABLE = True
+except ImportError:
+    _CONFIG_AVAILABLE = False
+    logger.warning("Config not available, using default pipeline settings")
 
 
 class RecognitionPipeline:
@@ -51,11 +60,11 @@ class RecognitionPipeline:
         encoder: Optional[FaceEncoder] = None,
         database: Optional[FaceDatabase] = None,
         recognizer: Optional[FaceRecognizer] = None,
-        recognition_threshold: float = 0.6,
-        process_every_n_frames: int = 1,
-        enable_events: bool = False,
-        event_debounce_frames: int = 3,
-        event_departed_frames: int = 3
+        recognition_threshold: Optional[float] = None,
+        process_every_n_frames: Optional[int] = None,
+        enable_events: Optional[bool] = None,
+        event_debounce_frames: Optional[int] = None,
+        event_departed_frames: Optional[int] = None
     ):
         """
         Initialize recognition pipeline.
@@ -66,11 +75,11 @@ class RecognitionPipeline:
             encoder: FaceEncoder instance (creates new if None)
             database: FaceDatabase instance (creates new if None)
             recognizer: FaceRecognizer instance (creates new if None)
-            recognition_threshold: Similarity threshold for recognition
-            process_every_n_frames: Process every Nth frame (1 = every frame)
-            enable_events: Enable event system for behavior triggers
-            event_debounce_frames: Frames required before event trigger
-            event_departed_frames: Absent frames before DEPARTED event
+            recognition_threshold: Similarity threshold (default from config or 0.6)
+            process_every_n_frames: Process every Nth frame (default from config or 1)
+            enable_events: Enable event system (default from config or False)
+            event_debounce_frames: Frames before event trigger (default from config or 3)
+            event_departed_frames: Absent frames before DEPARTED (default from config or 3)
             
         Example:
             >>> pipeline = RecognitionPipeline(enable_events=True)
@@ -78,6 +87,36 @@ class RecognitionPipeline:
             >>> results = pipeline.process_frame(frame)
             >>> events = pipeline.get_recent_events()
         """
+        # Load from config if available
+        if _CONFIG_AVAILABLE:
+            try:
+                config = get_config()
+                if recognition_threshold is None:
+                    recognition_threshold = config.face_recognition.threshold
+                if process_every_n_frames is None:
+                    process_every_n_frames = config.performance.process_every_n_frames
+                if enable_events is None:
+                    enable_events = False  # Default to False
+                if event_debounce_frames is None:
+                    event_debounce_frames = int(config.events.debounce_seconds * config.camera.fps)
+                if event_departed_frames is None:
+                    event_departed_frames = int(config.events.departed_threshold_seconds * config.camera.fps)
+                logger.info("Loaded pipeline settings from config")
+            except Exception as e:
+                logger.warning(f"Failed to load pipeline config: {e}")
+        
+        # Use defaults if still None
+        if recognition_threshold is None:
+            recognition_threshold = 0.6
+        if process_every_n_frames is None:
+            process_every_n_frames = 1
+        if enable_events is None:
+            enable_events = False
+        if event_debounce_frames is None:
+            event_debounce_frames = 3
+        if event_departed_frames is None:
+            event_departed_frames = 3
+        
         # Initialize components
         self.camera = camera if camera is not None else CameraInterface()
         self.detector = detector if detector is not None else FaceDetector()
@@ -112,6 +151,17 @@ class RecognitionPipeline:
         self.processing_time_ms = 0.0
         self.last_fps_update = time.time()
         self.fps_frame_count = 0
+        
+        # Performance metrics (Story 4.2)
+        self.metrics = {
+            'frames_processed': 0,
+            'total_recognition_time': 0.0,
+            'recognition_times': deque(maxlen=100),  # Rolling window of last 100
+            'fps_samples': deque(maxlen=30),  # Last 30 FPS measurements
+            'confidence_scores': deque(maxlen=100),  # Last 100 confidence scores
+        }
+        self.start_time = time.time()
+        self.last_summary_time = time.time()
         
         # Results tracking
         self.last_results: List[Tuple[str, float, Tuple[int, int, int, int]]] = []
@@ -176,7 +226,7 @@ class RecognitionPipeline:
         
         if len(face_locations) == 0:
             self.last_results = []
-            self._update_performance_metrics(start_time)
+            self._update_performance_metrics(start_time, [])
             return []
         
         # Step 2: Extract and encode faces
@@ -208,7 +258,12 @@ class RecognitionPipeline:
             self.event_manager.process_recognition_results(results, frame_number=self.frame_count)
         
         # Update performance metrics
-        self._update_performance_metrics(start_time)
+        self._update_performance_metrics(start_time, results)
+        
+        # Print periodic performance summary (Story 4.2)
+        if time.time() - self.last_summary_time >= 60:
+            self._print_performance_summary()
+            self.last_summary_time = time.time()
         
         # Log recognition events
         if results:
@@ -221,18 +276,84 @@ class RecognitionPipeline:
         
         return results
     
-    def _update_performance_metrics(self, start_time: float):
-        """Update FPS and processing time metrics."""
+    def _update_performance_metrics(self, start_time: float, results: Optional[List] = None):
+        """
+        Update FPS and processing time metrics (Story 4.2).
+        
+        Args:
+            start_time: Processing start timestamp
+            results: Recognition results (for confidence tracking)
+        """
         # Processing time for this frame
         self.processing_time_ms = (time.time() - start_time) * 1000
+        
+        # Story 4.2: Track metrics
+        self.metrics['frames_processed'] += 1
+        self.metrics['total_recognition_time'] += self.processing_time_ms
+        self.metrics['recognition_times'].append(self.processing_time_ms)
+        
+        # Track confidence scores
+        if results:
+            for name, confidence, _ in results:
+                self.metrics['confidence_scores'].append(confidence)
         
         # FPS calculation (update every second)
         self.fps_frame_count += 1
         elapsed = time.time() - self.last_fps_update
         if elapsed >= 1.0:
             self.fps = self.fps_frame_count / elapsed
+            self.metrics['fps_samples'].append(self.fps)
             self.fps_frame_count = 0
             self.last_fps_update = time.time()
+    
+    def _print_performance_summary(self):
+        """Print performance metrics summary every 60 seconds (Story 4.2)."""
+        # Calculate averages
+        avg_recognition_time = (
+            sum(self.metrics['recognition_times']) / 
+            len(self.metrics['recognition_times'])
+            if self.metrics['recognition_times'] else 0
+        )
+        
+        avg_fps = (
+            sum(self.metrics['fps_samples']) / 
+            len(self.metrics['fps_samples'])
+            if self.metrics['fps_samples'] else 0
+        )
+        
+        avg_confidence = (
+            sum(self.metrics['confidence_scores']) / 
+            len(self.metrics['confidence_scores'])
+            if self.metrics['confidence_scores'] else 0
+        )
+        
+        uptime = time.time() - self.start_time
+        
+        # Log structured metrics
+        logger.info(
+            "Performance Summary",
+            extra={
+                'event': 'performance_summary',
+                'metrics': {
+                    'avg_recognition_time_ms': round(avg_recognition_time, 2),
+                    'avg_fps': round(avg_fps, 2),
+                    'avg_confidence': round(avg_confidence, 3),
+                    'frames_processed': self.metrics['frames_processed'],
+                    'uptime_seconds': round(uptime, 1)
+                }
+            }
+        )
+        
+        # Print human-readable summary
+        print(f"\n{'='*70}")
+        print(f"  Performance Summary (60s interval)")
+        print(f"{'='*70}")
+        print(f"  Avg Recognition Time: {avg_recognition_time:.2f} ms")
+        print(f"  Avg FPS: {avg_fps:.2f}")
+        print(f"  Avg Confidence: {avg_confidence:.3f}")
+        print(f"  Frames Processed: {self.metrics['frames_processed']}")
+        print(f"  Uptime: {uptime:.1f}s")
+        print(f"{'='*70}\n")
     
     def draw_results(
         self,

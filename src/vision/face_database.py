@@ -15,8 +15,8 @@ from datetime import datetime
 import logging
 import shutil
 
-from face_encoder import FaceEncoder
-from face_detector import FaceDetector
+from .face_encoder import FaceEncoder
+from .face_detector import FaceDetector
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

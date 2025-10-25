@@ -1,0 +1,216 @@
+# Reachy Recognizer Configuration
+# Story 4.1 - YAML Configuration System
+#
+# This file contains all configurable parameters for the Reachy Recognizer system.
+# Values can be overridden via environment variables (e.g., REACHY_CAMERA_DEVICE_ID=1)
+
+# ============================================================================
+# Camera Configuration
+# ============================================================================
+camera:
+  # Camera device index (0 = default webcam, 1+ = external cameras)
+  device_id: 0
+  
+  # Camera resolution
+  width: 640
+  height: 480
+  
+  # Frames per second
+  fps: 30
+  
+  # Frame processing interval (process every Nth frame for performance)
+  process_every_n_frames: 1
+
+# ============================================================================
+# Face Detection Configuration
+# ============================================================================
+face_detection:
+  # Detection model: 'hog' (fast, CPU) or 'cnn' (accurate, GPU)
+  model: "hog"
+  
+  # Number of times to upsample image for detection (higher = more faces, slower)
+  upsample_times: 1
+  
+  # Minimum face size in pixels
+  min_face_size: 80
+
+# ============================================================================
+# Face Recognition Configuration
+# ============================================================================
+face_recognition:
+  # Recognition confidence threshold (0.0-1.0, lower = more strict)
+  # Recommended: 0.4-0.6 for good accuracy
+  threshold: 0.6
+  
+  # Tolerance for face comparison (lower = more strict)
+  # Default: 0.6, Strict: 0.5, Loose: 0.7
+  tolerance: 0.6
+  
+  # Face database file path
+  database_path: "face_database.pkl"
+  
+  # Distance metric: 'euclidean' or 'cosine'
+  distance_metric: "euclidean"
+
+# ============================================================================
+# Event System Configuration
+# ============================================================================
+events:
+  # Debounce time - person must be detected for N seconds before triggering event
+  debounce_seconds: 3.0
+  
+  # Departed threshold - person considered gone after N seconds not seen
+  departed_threshold_seconds: 3.0
+  
+  # Maximum event history to keep in memory
+  max_event_history: 100
+  
+  # Duplicate greeting prevention - minimum seconds between greetings to same person
+  min_greeting_interval_seconds: 60.0
+
+# ============================================================================
+# Behavior Configuration
+# ============================================================================
+behaviors:
+  # Enable real robot control (false = simulation mode)
+  enable_robot: true
+  
+  # Gesture-speech coordination delay (seconds)
+  gesture_speech_delay: 0.3
+  
+  # Behavior timing adjustments
+  timing:
+    greeting_wave_duration: 1.2
+    curious_tilt_duration: 1.5
+    idle_drift_duration: 3.0
+    neutral_return_duration: 0.5
+  
+  # Idle behavior settings
+  idle:
+    # Time with no faces before activating idle behaviors (seconds)
+    activation_threshold: 5.0
+    
+    # Interval between idle movements (seconds)
+    movement_interval: 3.0
+    
+    # Idle movement ranges (degrees)
+    roll_range: [-5, 5]
+    pitch_range: [-5, 5]
+    yaw_range: [-10, 10]
+
+# ============================================================================
+# Text-to-Speech Configuration
+# ============================================================================
+tts:
+  # Use enhanced voice system with OpenAI TTS
+  use_enhanced_voice: true
+  
+  # Voice backend priority (tried in order)
+  backend_priority:
+    - "openai"
+    - "pyttsx3"
+  
+  # OpenAI TTS settings
+  openai:
+    model: "tts-1"
+    voice: "nova"  # Options: alloy, echo, fable, onyx, nova, shimmer
+    speed: 1.0     # 0.25 to 4.0
+  
+  # Pyttsx3 (local TTS) settings
+  pyttsx3:
+    rate: 150      # Words per minute
+    volume: 0.9    # 0.0 to 1.0
+    voice_index: 1 # Voice selection (system dependent)
+  
+  # Greeting cache settings
+  cache:
+    enabled: true
+    max_size: 50   # Maximum cached greetings
+    ttl_seconds: 3600  # Cache entry lifetime (1 hour)
+
+# ============================================================================
+# Greeting Templates Configuration
+# ============================================================================
+greetings:
+  # Greeting personality: 'warm', 'professional', 'casual', 'enthusiastic'
+  personality: "warm"
+  
+  # Non-repetition window (remember last N greetings to avoid duplicates)
+  repetition_window: 5
+  
+  # Time-based greeting adjustments
+  time_of_day:
+    morning_start: 6   # Hour (24h format)
+    afternoon_start: 12
+    evening_start: 18
+    night_start: 22
+  
+  # Custom greeting phrases (optional - overrides defaults)
+  # custom_phrases:
+  #   recognized:
+  #     - "Welcome back, {name}!"
+  #     - "Hi {name}! Good to see you!"
+  #   unknown:
+  #     - "Hello there! I don't think we've met."
+  #     - "Hi! Nice to meet you!"
+
+# ============================================================================
+# Performance & Logging Configuration
+# ============================================================================
+performance:
+  # Target response latency (milliseconds)
+  target_latency_ms: 400
+  
+  # Performance monitoring interval (seconds)
+  stats_interval: 60
+  
+  # Frame processing timeout (seconds)
+  frame_timeout: 5.0
+  
+  # Process every Nth frame (1 = every frame, 2 = every other frame)
+  process_every_n_frames: 1
+
+logging:
+  # Log level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  level: "INFO"
+  
+  # Log file path (null = console only)
+  file_path: "logs/reachy_recognizer.log"
+  
+  # Log rotation settings
+  max_bytes: 10485760  # 10 MB
+  backup_count: 5
+  
+  # Log format
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  
+  # Enable structured JSON logging
+  json_format: false
+
+# ============================================================================
+# System Configuration
+# ============================================================================
+system:
+  # Reachy daemon host
+  reachy_host: "localhost"
+  
+  # Reachy daemon port
+  reachy_port: 50055
+  
+  # Graceful shutdown timeout (seconds)
+  shutdown_timeout: 5.0
+  
+  # Enable debug visualization (show camera feed with overlays)
+  debug_display: false
+
+# ============================================================================
+# Environment Variable Overrides
+# ============================================================================
+# Any config value can be overridden with environment variables using the format:
+# REACHY_<SECTION>_<KEY>=<VALUE>
+#
+# Examples:
+#   REACHY_CAMERA_DEVICE_ID=1
+#   REACHY_FACE_RECOGNITION_THRESHOLD=0.5
+#   REACHY_TTS_USE_ENHANCED_VOICE=false
+#   REACHY_LOGGING_LEVEL=DEBUG

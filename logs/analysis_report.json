@@ -1,0 +1,169 @@
+{
+  "summary": {
+    "total_entries": 17,
+    "start_time": "2025-10-24T15:23:09.492378Z",
+    "end_time": "2025-10-24T15:24:54.584002Z",
+    "duration_seconds": 105.091624,
+    "error_count": 1,
+    "warning_count": 1
+  },
+  "events": {
+    "event_counts": {
+      "test_event": 1,
+      "person_recognized": 1,
+      "person_unknown": 1,
+      "frame_processed": 5,
+      "accuracy_metrics": 1,
+      "error": 1,
+      "performance_summary": 1
+    },
+    "total_events": 11,
+    "event_types": 7
+  },
+  "performance": {
+    "fps": {
+      "count": 6,
+      "mean": 30.5,
+      "median": 30.5,
+      "min": 28.5,
+      "max": 32.5,
+      "stdev": 1.41
+    },
+    "confidence": {
+      "count": 2,
+      "mean": 0.65,
+      "median": 0.65,
+      "min": 0.45,
+      "max": 0.85,
+      "stdev": 0.28
+    },
+    "recognition_time": {
+      "count": 5,
+      "mean": 0.02,
+      "median": 0.02,
+      "min": 0.01,
+      "max": 0.02,
+      "stdev": 0.0
+    },
+    "faces_detected": {
+      "count": 5,
+      "mean": 0.6,
+      "median": 1,
+      "min": 0,
+      "max": 1,
+      "stdev": 0.55
+    },
+    "true_positives": {
+      "count": 1,
+      "mean": 5,
+      "median": 5,
+      "min": 5,
+      "max": 5,
+      "stdev": 0
+    },
+    "false_positives": {
+      "count": 1,
+      "mean": 1,
+      "median": 1,
+      "min": 1,
+      "max": 1,
+      "stdev": 0
+    },
+    "true_negatives": {
+      "count": 1,
+      "mean": 8,
+      "median": 8,
+      "min": 8,
+      "max": 8,
+      "stdev": 0
+    },
+    "false_negatives": {
+      "count": 1,
+      "mean": 2,
+      "median": 2,
+      "min": 2,
+      "max": 2,
+      "stdev": 0
+    },
+    "accuracy": {
+      "count": 1,
+      "mean": 0.81,
+      "median": 0.81,
+      "min": 0.81,
+      "max": 0.81,
+      "stdev": 0
+    },
+    "precision": {
+      "count": 1,
+      "mean": 0.83,
+      "median": 0.83,
+      "min": 0.83,
+      "max": 0.83,
+      "stdev": 0
+    },
+    "recall": {
+      "count": 1,
+      "mean": 0.71,
+      "median": 0.71,
+      "min": 0.71,
+      "max": 0.71,
+      "stdev": 0
+    },
+    "avg_fps": {
+      "count": 1,
+      "mean": 30.0,
+      "median": 30.0,
+      "min": 30.0,
+      "max": 30.0,
+      "stdev": 0
+    },
+    "avg_recognition_time": {
+      "count": 1,
+      "mean": 0.02,
+      "median": 0.02,
+      "min": 0.02,
+      "max": 0.02,
+      "stdev": 0
+    },
+    "avg_confidence": {
+      "count": 1,
+      "mean": 0.72,
+      "median": 0.72,
+      "min": 0.72,
+      "max": 0.72,
+      "stdev": 0
+    },
+    "uptime": {
+      "count": 1,
+      "mean": 120.5,
+      "median": 120.5,
+      "min": 120.5,
+      "max": 120.5,
+      "stdev": 0
+    }
+  },
+  "accuracy": {
+    "note": "No accuracy data found in logs"
+  },
+  "errors": {
+    "count": 1,
+    "recent": [
+      {
+        "timestamp": "2025-10-24T15:24:54.584002Z",
+        "module": "test_logging_integration",
+        "message": "Error occurred: Test error for logging"
+      }
+    ]
+  },
+  "warnings": {
+    "count": 1,
+    "sample": [
+      {
+        "timestamp": "2025-10-24T15:24:54.068394Z",
+        "level": "WARNING",
+        "module": "test_logging_integration",
+        "message": "Warning message test"
+      }
+    ]
+  }
+}

@@ -21,6 +21,14 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Import config (optional - falls back to defaults if not available)
+try:
+    from ..config import get_config
+    _CONFIG_AVAILABLE = True
+except ImportError:
+    _CONFIG_AVAILABLE = False
+    logger.warning("Config not available, using default values")
+
 
 class EventType(Enum):
     """Recognition event types."""
@@ -100,18 +108,52 @@ class EventManager:
     
     def __init__(
         self,
-        debounce_frames: int = 3,
-        departed_frames: int = 3,
-        max_history: int = 100
+        debounce_seconds: Optional[float] = None,
+        departed_threshold_seconds: Optional[float] = None,
+        debounce_frames: Optional[int] = None,
+        departed_frames: Optional[int] = None,
+        max_history: Optional[int] = None,
+        fps: float = 30.0
     ):
         """
         Initialize event manager.
         
         Args:
-            debounce_frames: Frames required before triggering recognition event (default: 3)
-            departed_frames: Frames absent before triggering departed event (default: 3)
-            max_history: Maximum events to keep in history (default: 100)
+            debounce_seconds: Seconds required before triggering event (loaded from config if None)
+            departed_threshold_seconds: Seconds absent before departed event (loaded from config if None)
+            debounce_frames: DEPRECATED - use debounce_seconds
+            departed_frames: DEPRECATED - use departed_frames
+            max_history: Maximum events to keep in history (loaded from config if None)
+            fps: Frame rate for converting seconds to frames (default: 30.0)
         """
+        # Load from config if available
+        if _CONFIG_AVAILABLE and (debounce_seconds is None or departed_threshold_seconds is None or max_history is None):
+            try:
+                config = get_config()
+                if debounce_seconds is None:
+                    debounce_seconds = config.events.debounce_seconds
+                if departed_threshold_seconds is None:
+                    departed_threshold_seconds = config.events.departed_threshold_seconds
+                if max_history is None:
+                    max_history = config.events.max_event_history
+                logger.info("✓ Loaded event configuration from config")
+            except Exception as e:
+                logger.warning(f"Failed to load config: {e}, using defaults")
+        
+        # Set defaults if still None
+        if debounce_seconds is None:
+            debounce_seconds = 3.0
+        if departed_threshold_seconds is None:
+            departed_threshold_seconds = 3.0
+        if max_history is None:
+            max_history = 100
+        
+        # Convert seconds to frames (backwards compatibility)
+        if debounce_frames is None:
+            debounce_frames = max(1, int(debounce_seconds * fps))
+        if departed_frames is None:
+            departed_frames = max(1, int(departed_threshold_seconds * fps))
+        
         self.debounce_frames = debounce_frames
         self.departed_frames = departed_frames
         self.max_history = max_history
@@ -123,6 +165,17 @@ class EventManager:
         self.current_state: Dict[str, PersonState] = {}
         self.frame_count = 0
         self.next_callback_id = 0
+        
+        # Accuracy tracking (Story 4.2)
+        self.accuracy_metrics = {
+            'true_positives': 0,   # Correctly recognized known person
+            'false_positives': 0,  # Incorrectly recognized as known (would need ground truth)
+            'true_negatives': 0,   # Correctly identified as unknown
+            'false_negatives': 0,  # Failed to recognize known person (would need ground truth)
+            'unknown_count': 0,    # Total unknown person detections
+            'recognized_count': 0,  # Total recognized person detections
+            'total_events': 0,     # Total events generated
+        }
         
         logger.info(f"EventManager initialized (debounce={debounce_frames}, departed={departed_frames})")
     
@@ -185,6 +238,9 @@ class EventManager:
                     state.event_triggered = True
                     self._add_to_history(event)
                     self._trigger_callbacks(event)
+                    
+                    # Track accuracy metrics (Story 4.2)
+                    self._update_accuracy_metrics(event_type, name, confidence)
                     
                     logger.info(f"✓ Event: {event}")
             
@@ -352,11 +408,95 @@ class EventManager:
             }
         }
     
+    def _update_accuracy_metrics(self, event_type: EventType, person_name: str, confidence: float):
+        """
+        Update accuracy tracking metrics (Story 4.2).
+        
+        Args:
+            event_type: Type of event triggered
+            person_name: Person's name
+            confidence: Recognition confidence score
+        """
+        self.accuracy_metrics['total_events'] += 1
+        
+        if event_type == EventType.PERSON_RECOGNIZED:
+            # Assume true positive (correctly recognized known person)
+            # Note: False positive detection would require ground truth data
+            self.accuracy_metrics['recognized_count'] += 1
+            self.accuracy_metrics['true_positives'] += 1
+            
+        elif event_type == EventType.PERSON_UNKNOWN:
+            # Assume true negative (correctly identified as unknown)
+            # Note: False negative detection would require ground truth data
+            self.accuracy_metrics['unknown_count'] += 1
+            self.accuracy_metrics['true_negatives'] += 1
+        
+        # Log accuracy event
+        logger.info(
+            f"Recognition accuracy tracked",
+            extra={
+                'event': 'accuracy_update',
+                'data': {
+                    'event_type': event_type.value,
+                    'person_name': person_name,
+                    'confidence': confidence
+                },
+                'metrics': self.accuracy_metrics.copy()
+            }
+        )
+    
+    def get_accuracy_report(self) -> Dict[str, Any]:
+        """
+        Generate recognition accuracy report (Story 4.2).
+        
+        Returns:
+            Dictionary with accuracy statistics
+            
+        Note: True accuracy calculation requires ground truth data.
+        Current implementation assumes all recognitions are correct.
+        """
+        total = self.accuracy_metrics['total_events']
+        if total == 0:
+            return {
+                'accuracy': 0.0,
+                'total_events': 0,
+                'recognized_count': 0,
+                'unknown_count': 0
+            }
+        
+        # Calculate accuracy (with caveat about ground truth)
+        correct = (
+            self.accuracy_metrics['true_positives'] + 
+            self.accuracy_metrics['true_negatives']
+        )
+        accuracy = (correct / total * 100) if total > 0 else 0.0
+        
+        return {
+            'accuracy': round(accuracy, 2),
+            'total_events': total,
+            'recognized_count': self.accuracy_metrics['recognized_count'],
+            'unknown_count': self.accuracy_metrics['unknown_count'],
+            'true_positives': self.accuracy_metrics['true_positives'],
+            'false_positives': self.accuracy_metrics['false_positives'],
+            'true_negatives': self.accuracy_metrics['true_negatives'],
+            'false_negatives': self.accuracy_metrics['false_negatives'],
+            'note': 'Accuracy assumes all recognitions are correct (no ground truth validation)'
+        }
+    
     def reset(self):
         """Reset event manager state (clear history and tracking)."""
         self.event_history.clear()
         self.current_state.clear()
         self.frame_count = 0
+        self.accuracy_metrics = {
+            'true_positives': 0,
+            'false_positives': 0,
+            'true_negatives': 0,
+            'false_negatives': 0,
+            'unknown_count': 0,
+            'recognized_count': 0,
+            'total_events': 0,
+        }
         logger.info("EventManager reset")
 
 

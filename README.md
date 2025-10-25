@@ -106,22 +106,30 @@ python e2e_integration_test.py --camera 1
 
 ```
 reachy-mini-dev/
+├── src/                      # Main source code (modular architecture)
+│   ├── vision/              # Camera, detection, encoding, recognition
+│   ├── events/              # Event system with debouncing
+│   ├── behaviors/           # Robot movements and idle behaviors
+│   ├── voice/               # TTS, greeting selection, adaptive voice
+│   ├── coordination/        # Greeting coordinator
+│   └── config/              # Configuration loader and settings
 ├── docs/                     # Documentation and project management
 │   ├── prd.md               # Product Requirements Document
 │   ├── epics.md             # Epic breakdown with 16 stories
 │   └── stories/             # Individual story implementation files
 ├── tests/                    # Test suite
+├── archive/                  # Archived demo and test files
 ├── reachy_mini/             # Reachy Mini SDK source
 ├── reachy_mini_toolbox/     # Vision and utility modules
-├── examples/                # Example scripts and demos
-├── test-webui.py           # FastAPI server for web control
-├── index.html              # Web-based control interface
+├── models/                   # Face recognition models
+├── scenes/                   # MuJoCo simulation scenes
+├── main.py                  # Main application entry point
 └── pyproject.toml          # Dependency configuration
 ```
 
 ## Development
 
-See [SETUP.md](SETUP.md) for detailed development environment setup instructions.
+See [docs/SETUP.md](docs/SETUP.md) for detailed development environment setup instructions.
 
 ### Key Dependencies
 
@@ -142,17 +150,21 @@ pytest tests/
 
 - **[Product Requirements](docs/prd.md)**: Complete PRD with 5 milestones and 8 functional requirements
 - **[Epic Breakdown](docs/epics.md)**: 16 stories across 4 epics
-- **[Setup Guide](SETUP.md)**: Detailed development environment setup
-- **[TTS Setup](TTS_SETUP_GUIDE.md)**: Text-to-speech configuration
+- **[Setup Guide](docs/SETUP.md)**: Detailed development environment setup
+- **[TTS Setup](docs/TTS_SETUP_GUIDE.md)**: Text-to-speech configuration
+- **[Configuration Guide](docs/CONFIGURATION.md)**: Complete reference for all configuration settings
+- **[Project Structure](docs/PROJECT_STRUCTURE.md)**: Code organization and architecture
 
 ## Architecture
 
-The system consists of 5 main subsystems:
-1. **Camera Input Pipeline**: Webcam capture with OpenCV
-2. **Vision Engine**: Face detection and recognition
-3. **Behavior Engine**: Response coordination (gestures + speech)
-4. **Configuration System**: YAML-based settings management
-5. **Monitoring & Analytics**: Performance logging and metrics
+The system is organized into 6 main subsystems under `src/`:
+
+1. **Vision System** (`src/vision/`): Camera interface, face detection, encoding, recognition pipeline
+2. **Event System** (`src/events/`): Recognition event management with debouncing
+3. **Behavior System** (`src/behaviors/`): Robot movement coordination and idle behaviors  
+4. **Voice System** (`src/voice/`): Multi-backend TTS, greeting selection, adaptive voice
+5. **Coordination** (`src/coordination/`): Greeting coordinator integrating all subsystems
+6. **Configuration** (`src/config/`): YAML-based centralized settings management
 
 ## Contributing
 
@@ -175,4 +187,12 @@ See LICENSE files in respective subdirectories.
 
 ---
 
-**Status**: Active Development - Epic 1 Foundation (4 stories) ✓
+**Project Status**: 15/16 stories complete (94%)
+
+- ✅ Epic 1: Foundation & Simulation Setup (4/4 stories)
+- ✅ Epic 2: Vision & Recognition Pipeline (5/5 stories)  
+- ✅ Epic 3: Behavior Engine & Response System (4/4 stories)
+- 🔄 Epic 4: Configuration & Monitoring (2/3 stories)
+  - ✅ Story 4.1: YAML Configuration System
+  - ✅ Story 4.2: Performance Logging & Analytics
+  - ⏳ Story 4.3: End-to-End Demo & Documentation

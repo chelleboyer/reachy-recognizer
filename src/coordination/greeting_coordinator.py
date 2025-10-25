@@ -1,5 +1,5 @@
 """
-Greeting Coordinator - Story 3.3
+Greeting Coordinator - Story 3.3 + 3.4 Voice Enhancement
 
 Coordinates recognition events with behaviors and speech for natural,
 personalized greeting interactions.
@@ -8,6 +8,8 @@ This module ties together:
 - Event System (Story 2.5): Recognition events
 - Behavior Module (Story 3.1): Physical gestures
 - TTS Module (Story 3.2): Spoken greetings
+- Greeting Selector (Story 3.4): Varied, contextual greetings
+- Adaptive TTS (Story 3.4): High-quality OpenAI voices
 
 Implements timing coordination, session tracking, and multi-person prioritization.
 """
@@ -15,15 +17,28 @@ Implements timing coordination, session tracking, and multi-person prioritizatio
 import time
 import threading
 import logging
+import asyncio
 from typing import Optional, Dict, List, Set
 from dataclasses import dataclass
 
-from event_system import EventManager, EventType, RecognitionEvent
-from behavior_module import BehaviorManager, greeting_wave
-from tts_module import TTSManager, GreetingType
+from ..events.event_system import EventManager, EventType, RecognitionEvent
+from ..behaviors.behavior_module import BehaviorManager, greeting_wave
+from ..voice.tts_module import TTSManager, GreetingType as OldGreetingType
+
+# New enhanced voice system
+from ..voice.greeting_selector import GreetingSelector, GreetingType, GreetingContext
+from ..voice.adaptive_tts_manager import AdaptiveTTSManager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Try to import config (optional - falls back to defaults)
+try:
+    from ..config import get_config
+    _CONFIG_AVAILABLE = True
+except ImportError:
+    _CONFIG_AVAILABLE = False
+    logger.warning("Config not available, using default coordinator settings")
 
 
 class GreetingCoordinator:
@@ -39,14 +54,18 @@ class GreetingCoordinator:
     - Multi-person confidence-based priority
     - Response latency tracking (< 400ms target)
     - Thread-safe execution
+    - Natural voice variation (OpenAI TTS)
     """
     
     def __init__(
         self,
         event_manager: EventManager,
         behavior_manager: BehaviorManager,
-        tts_manager: TTSManager,
-        gesture_speech_delay: float = 0.3
+        tts_manager: Optional[TTSManager] = None,  # Legacy support
+        adaptive_tts: Optional[AdaptiveTTSManager] = None,  # New voice system
+        greeting_selector: Optional[GreetingSelector] = None,  # New selector
+        gesture_speech_delay: Optional[float] = None,
+        use_enhanced_voice: Optional[bool] = None  # Enable new voice system
     ):
         """
         Initialize greeting coordinator.
@@ -54,18 +73,56 @@ class GreetingCoordinator:
         Args:
             event_manager: Event manager for recognition events
             behavior_manager: Behavior manager for gestures
-            tts_manager: TTS manager for speech
-            gesture_speech_delay: Delay between gesture start and speech (seconds)
+            tts_manager: Legacy TTS manager (optional)
+            adaptive_tts: New adaptive TTS manager with OpenAI (optional)
+            greeting_selector: Greeting selector for variation (optional)
+            gesture_speech_delay: Delay between gesture start and speech (default from config or 0.3)
+            use_enhanced_voice: Use OpenAI TTS if available (default from config or True)
         """
+        # Load from config if available
+        if _CONFIG_AVAILABLE:
+            try:
+                config = get_config()
+                if gesture_speech_delay is None:
+                    gesture_speech_delay = config.behaviors.gesture_speech_delay
+                if use_enhanced_voice is None:
+                    use_enhanced_voice = config.tts.use_enhanced_voice
+                logger.info("Loaded coordinator settings from config")
+            except Exception as e:
+                logger.warning(f"Failed to load coordinator config: {e}")
+        
+        # Use defaults if still None
+        if gesture_speech_delay is None:
+            gesture_speech_delay = 0.3
+        if use_enhanced_voice is None:
+            use_enhanced_voice = True
+        
         self.event_manager = event_manager
         self.behavior_manager = behavior_manager
-        self.tts_manager = tts_manager
         self.gesture_speech_delay = gesture_speech_delay
+        self.use_enhanced_voice = use_enhanced_voice
+        
+        # TTS setup - prefer new system
+        self.tts_manager = tts_manager
+        self.adaptive_tts = adaptive_tts
+        self.greeting_selector = greeting_selector
+        
+        # Initialize enhanced voice system if requested
+        if use_enhanced_voice:
+            if not self.adaptive_tts:
+                logger.info("Initializing enhanced voice system...")
+                self.adaptive_tts = AdaptiveTTSManager(enable_caching=True)
+            if not self.greeting_selector:
+                self.greeting_selector = GreetingSelector(personality="warm")
+            logger.info("✨ Enhanced voice system active (OpenAI TTS)")
+        else:
+            logger.info("Using legacy TTS system")
         
         # Session tracking (AC: 6)
         self.greeted_persons: Set[str] = set()  # Person names greeted this session
         self.greeting_in_progress = False
         self.greeting_lock = threading.Lock()
+        self.session_start = time.time()
         
         # Performance metrics (AC: 4)
         self.total_greetings = 0
@@ -85,6 +142,7 @@ class GreetingCoordinator:
         
         logger.info("GreetingCoordinator initialized")
         logger.info(f"  Gesture-speech delay: {gesture_speech_delay}s")
+        logger.info(f"  Voice system: {'Enhanced (OpenAI)' if use_enhanced_voice else 'Legacy (pyttsx3)'}")
     
     def _on_person_recognized(self, event: RecognitionEvent):
         """
@@ -96,6 +154,8 @@ class GreetingCoordinator:
         Args:
             event: Recognition event with person details
         """
+        logger.info(f"🎯 COORDINATOR RECEIVED EVENT: {event.person_name}")
+        
         # Check if already greeted this session (AC: 6)
         if event.person_name in self.greeted_persons:
             logger.debug(f"Already greeted {event.person_name}, skipping")
@@ -149,10 +209,17 @@ class GreetingCoordinator:
         time.sleep(self.gesture_speech_delay)
         
         # 3. Start speech (during gesture) (AC: 3)
-        self.tts_manager.speak_greeting(
-            GreetingType.RECOGNIZED,
-            event.person_name
-        )
+        if self.use_enhanced_voice and self.adaptive_tts and self.greeting_selector:
+            # Use new enhanced voice system
+            self._speak_enhanced(event.person_name, GreetingType.RECOGNIZED)
+        elif self.tts_manager:
+            # Fallback to legacy TTS
+            self.tts_manager.speak_greeting(
+                OldGreetingType.RECOGNIZED,
+                event.person_name
+            )
+        else:
+            logger.warning("No TTS system available!")
         
         # 4. Mark as greeted (AC: 6)
         self.greeted_persons.add(event.person_name)
@@ -171,6 +238,41 @@ class GreetingCoordinator:
         # Check latency target (AC: 4)
         if initial_latency > 400:
             logger.warning(f"⚠️  Initial latency {initial_latency:.1f}ms exceeds 400ms target!")
+    
+    def _speak_enhanced(self, person_name: Optional[str], greeting_type: GreetingType):
+        """
+        Use enhanced voice system with varied greetings.
+        
+        Args:
+            person_name: Person's name (or None for unknown)
+            greeting_type: Type of greeting
+        """
+        # Build context
+        context = GreetingContext(
+            time_of_day=self.greeting_selector.get_time_of_day(),
+            session_duration=time.time() - self.session_start,
+            is_first_greeting=(len(self.greeted_persons) == 0),
+            interaction_count=self.total_greetings
+        )
+        
+        # Select varied greeting
+        template = self.greeting_selector.select_greeting(
+            person_name=person_name,
+            greeting_type=greeting_type,
+            context=context
+        )
+        
+        logger.info(f"  Selected: '{template.text[:50]}...' ({template.emotion})")
+        
+        # Synthesize and speak with async wrapper
+        result = asyncio.run(self.adaptive_tts.speak_greeting(template))
+        
+        if result.success:
+            cached = result.audio_data.cached if result.audio_data else False
+            logger.info(f"  🔊 Spoke with {result.backend_used.value if result.backend_used else 'unknown'} "
+                       f"({'cached' if cached else 'generated'})")
+        else:
+            logger.error(f"  ✗ Speech failed: {result.error}")
     
     def _process_pending_greetings(self):
         """
