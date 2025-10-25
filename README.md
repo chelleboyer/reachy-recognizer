@@ -36,10 +36,10 @@ Reachy Recognizer is a complete AI companion system that transforms the Reachy M
 
 ### Prerequisites
 
-- Python 3.11+ (3.12 recommended)
-- Reachy Mini SDK with MuJoCo simulator
-- Webcam (for face detection)
-- OpenAI API key (for voice features)
+- **Python 3.11+** (3.12 recommended)
+- **Webcam** (for face detection)
+- **OpenAI API key** (for voice features)
+- **Reachy Mini SDK** (optional - for robot control/simulation)
 
 ### Installation
 
@@ -52,24 +52,37 @@ Reachy Recognizer is a complete AI companion system that transforms the Reachy M
 2. **Create and activate virtual environment:**
    ```bash
    python -m venv .venv
-   # Windows
-   .venv\Scripts\activate
+   
+   # Windows PowerShell
+   .venv\Scripts\Activate.ps1
+   
+   # Windows Command Prompt
+   .venv\Scripts\activate.bat
+   
    # macOS/Linux
    source .venv/bin/activate
    ```
 
 3. **Install dependencies:**
    ```bash
-   pip install -r requirements.txt
-   # Or install key packages directly:
+   # Install core packages
    pip install opencv-python face-recognition openai python-dotenv pyyaml pygame pyaudio
+   
+   # Install Reachy SDK (optional - for robot control)
+   pip install reachy-mini
    ```
 
-4. **Configure environment:**
-   Create a `.env` file with your OpenAI API key:
+4. **Configure OpenAI API:**
+   Create a `.env` file in the project root:
    ```bash
    OPENAI_API_KEY=your_api_key_here
    ```
+
+5. **Add a face to the database:**
+   ```bash
+   python add_face.py
+   ```
+   Follow the prompts to capture your face and add it to the system.
 
 ### Running the System
 
@@ -77,9 +90,19 @@ Reachy Recognizer is a complete AI companion system that transforms the Reachy M
 
 **Complete system with face recognition, greetings, and coordinated behaviors:**
 
-1. **Start the Reachy simulator:**
+1. **Start the Reachy simulator** (optional - skip if no robot):
    ```bash
-   uvx reachy-mini --daemon start
+   # Windows PowerShell
+   uvx --from reachy-mini[mujoco] reachy-mini-daemon --sim
+   
+   # macOS/Linux
+   uvx --from 'reachy-mini[mujoco]' reachy-mini-daemon --sim
+   ```
+   
+   Or disable robot movements in `src/config/config.yaml`:
+   ```yaml
+   behaviors:
+     enable_robot: false
    ```
 
 2. **Run the main system:**
@@ -87,35 +110,39 @@ Reachy Recognizer is a complete AI companion system that transforms the Reachy M
    python main.py
    ```
 
-This will:
-- Initialize all subsystems (vision, events, behaviors, voice, coordination)
-- Load face database from `data/faces.json`
-- Continuously monitor camera for faces
-- Greet recognized people with gestures and Shimmer voice
-- Display camera feed with detection boxes and confidence scores
-- Log all events and performance metrics
+**What it does:**
+- Initializes all subsystems (vision, events, behaviors, voice, coordination)
+- Loads face database from `data/faces.json`
+- Continuously monitors camera for faces
+- Greets recognized people by name with gestures and Shimmer voice
+- Displays camera feed with detection boxes and confidence scores
+- Logs all events and performance metrics
 
-**Press Ctrl+C to stop, or 'q' in the camera window**
+**Controls:**
+- Press `Ctrl+C` to stop
+- Press `q` in the camera window to exit
 
 #### Option 2: Voice Conversation Demo
 
 **Interactive voice conversation with continuous movements:**
 
-1. **Start the Reachy simulator** (if not running)
+1. **Start the Reachy simulator** (if using robot movements)
 
 2. **Run the voice demo:**
    ```bash
    python voice_demo.py
    ```
+   
+   Enter your name when prompted, then start talking!
 
-Features:
+**Features:**
 - Speech-to-text using Whisper API
 - Conversational AI with GPT-4o-mini
 - Text-to-speech with Shimmer voice (1.15x speed)
 - Continuous head movements and tilts
 - Natural idle antenna drifts (every 0.8s)
 
-**Say "goodbye" or "bye" to exit**
+**Exit:** Say "goodbye" or "bye"
 
 #### Option 3: Comprehensive System Demo
 
@@ -125,25 +152,25 @@ Features:
 python demo.py --duration 60
 ```
 
-Options:
+**Options:**
 - `--duration N`: Run for N seconds (default: 60)
 - `--no-display`: Run without camera window
 - `--benchmark`: Include detailed performance metrics
 
-#### Option 4: Add Faces to Database
+#### Option 4: Add More Faces to Database
 
-**Easy utility to capture and store new faces:**
+**Capture and store faces for recognition:**
 
 ```bash
 python add_face.py
 ```
 
-This will:
-- Open camera with live preview
-- Automatically detect faces
-- Prompt for person's name
-- Save face encoding to database
-- Show visual feedback during capture
+**Process:**
+- Camera opens with live preview
+- Face is automatically detected
+- Enter person's name when prompted
+- Face encoding is saved to `data/faces.json`
+- Visual feedback during capture
 
 ## System Architecture
 
