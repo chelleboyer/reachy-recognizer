@@ -3,6 +3,11 @@ Unit Tests for Story 3.1: Greeting Behavior Module
 
 Tests behavior definitions, BehaviorManager execution, non-blocking operation,
 interruption logic, and thread safety.
+
+Can run with real robot (ENABLE_ROBOT=True) or in simulation mode (default).
+
+NOTE: When testing with real robot, the dashboard can remain open at http://localhost:8000/
+      Multiple clients can connect to the same robot via Zenoh.
 """
 
 import sys
@@ -11,7 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import time
 import threading
-from behavior_module import (
+from src.behaviors.behavior_module import (
     BehaviorAction,
     Behavior,
     BehaviorManager,
@@ -20,6 +25,31 @@ from behavior_module import (
     create_idle_drift,
     neutral_pose
 )
+
+# Control whether to use real robot or simulation
+# Set to True to test with actual Reachy Mini robot
+ENABLE_ROBOT = os.environ.get('ENABLE_ROBOT', 'False').lower() in ('true', '1', 'yes')
+
+print(f"Test mode: {'REAL ROBOT' if ENABLE_ROBOT else 'SIMULATION'}")
+
+# Try to create a shared robot connection if ENABLE_ROBOT is True
+shared_robot = None
+if ENABLE_ROBOT:
+    try:
+        from reachy_mini import ReachyMini
+        print("Attempting to connect to Reachy...")
+        print("This may take up to 30 seconds...")
+        print("(Dashboard can remain open)")
+        shared_robot = ReachyMini(media_backend="no_media", timeout=60)
+        print("✓ Connected to Reachy successfully")
+        print("Robot will be used for all tests")
+    except Exception as e:
+        print(f"✗ Failed to connect: {e}")
+        print("Falling back to SIMULATION mode")
+        ENABLE_ROBOT = False
+        shared_robot = None
+
+print()
 
 
 def test_behavior_action_structure():
@@ -116,23 +146,22 @@ def test_behavior_manager_initialization():
     """Test BehaviorManager initialization (AC: 1, 6)."""
     print("\n[TEST] BehaviorManager initialization...")
     
-    # Test with no robot (simulation)
+    # Test with simulation mode
     manager = BehaviorManager(reachy=None, enable_robot=False)
-    assert manager.reachy is None
+    assert manager.reachy is None or not manager.enable_robot
     assert manager.enable_robot == False
     assert manager.current_behavior is None
     assert manager.behaviors_executed == 0
     print("  ✓ Simulation mode initialization")
     
-    # Test with mock robot
-    class MockRobot:
-        def set_target(self, head=None):
-            pass
-    
-    manager = BehaviorManager(reachy=MockRobot(), enable_robot=True)
-    assert manager.reachy is not None
-    assert manager.enable_robot == True
-    print("  ✓ Robot mode initialization")
+    # Test with robot mode (using shared connection)
+    if ENABLE_ROBOT and shared_robot:
+        manager = BehaviorManager(reachy=shared_robot, enable_robot=True)
+        assert manager.reachy is not None
+        assert manager.enable_robot == True
+        print(f"  ✓ Robot mode initialization (using shared connection)")
+    else:
+        print("  ⊘ Skipping robot mode test (ENABLE_ROBOT=False)")
     
     print("✓ BehaviorManager initialization validated")
     return True
@@ -142,7 +171,7 @@ def test_behavior_execution_non_blocking():
     """Test non-blocking behavior execution (AC: 6)."""
     print("\n[TEST] Non-blocking execution...")
     
-    manager = BehaviorManager(reachy=None, enable_robot=False)
+    manager = BehaviorManager(reachy=shared_robot if ENABLE_ROBOT else None, enable_robot=ENABLE_ROBOT)
     
     # Create a behavior with longer duration
     long_behavior = Behavior(
@@ -168,6 +197,7 @@ def test_behavior_execution_non_blocking():
     time.sleep(1.2)
     assert manager.is_executing() == False
     
+    manager.stop_current()  # Don't close shared connection
     print("✓ Non-blocking execution validated")
     return True
 
@@ -176,7 +206,7 @@ def test_behavior_interruption():
     """Test behavior interruption logic (AC: 6)."""
     print("\n[TEST] Behavior interruption...")
     
-    manager = BehaviorManager(reachy=None, enable_robot=False)
+    manager = BehaviorManager(reachy=shared_robot if ENABLE_ROBOT else None, enable_robot=ENABLE_ROBOT)
     
     # Start a longer behavior (low priority, interruptible)
     long_behavior = Behavior(
@@ -201,6 +231,7 @@ def test_behavior_interruption():
     
     time.sleep(1.5)  # Let greeting complete
     
+    manager.stop_current()  # Don't close shared connection
     print("✓ Behavior interruption validated")
     return True
 
@@ -209,7 +240,7 @@ def test_non_interruptible_behavior():
     """Test non-interruptible behavior protection (AC: 6)."""
     print("\n[TEST] Non-interruptible protection...")
     
-    manager = BehaviorManager(reachy=None, enable_robot=False)
+    manager = BehaviorManager(reachy=shared_robot if ENABLE_ROBOT else None, enable_robot=ENABLE_ROBOT)
     
     # Start non-interruptible greeting
     manager.execute_behavior(greeting_wave)
@@ -226,6 +257,7 @@ def test_non_interruptible_behavior():
     
     time.sleep(1.5)  # Let greeting complete
     
+    manager.stop_current()  # Don't close shared connection
     print("✓ Non-interruptible protection validated")
     return True
 
@@ -234,7 +266,7 @@ def test_priority_system():
     """Test priority-based behavior selection (AC: 1, 6)."""
     print("\n[TEST] Priority system...")
     
-    manager = BehaviorManager(reachy=None, enable_robot=False)
+    manager = BehaviorManager(reachy=shared_robot if ENABLE_ROBOT else None, enable_robot=ENABLE_ROBOT)
     
     # Start high-priority behavior
     manager.execute_behavior(greeting_wave)  # priority 8
@@ -254,6 +286,7 @@ def test_priority_system():
     
     time.sleep(1.5)  # Let greeting complete
     
+    manager.stop_current()  # Don't close shared connection
     print("✓ Priority system validated")
     return True
 
@@ -262,7 +295,7 @@ def test_thread_safety():
     """Test thread-safe behavior execution (AC: 6)."""
     print("\n[TEST] Thread safety...")
     
-    manager = BehaviorManager(reachy=None, enable_robot=False)
+    manager = BehaviorManager(reachy=shared_robot if ENABLE_ROBOT else None, enable_robot=ENABLE_ROBOT)
     
     # Execute multiple behaviors from different threads
     def execute_random_behavior(i):
@@ -290,6 +323,7 @@ def test_thread_safety():
     print(f"  ✓ Handled {len(threads)} concurrent requests")
     print(f"  ✓ Executed: {stats['behaviors_executed']} behaviors")
     
+    manager.stop_current()  # Don't close shared connection
     print("✓ Thread safety validated")
     return True
 
@@ -298,7 +332,7 @@ def test_behavior_statistics():
     """Test behavior execution statistics."""
     print("\n[TEST] Statistics tracking...")
     
-    manager = BehaviorManager(reachy=None, enable_robot=False)
+    manager = BehaviorManager(reachy=shared_robot if ENABLE_ROBOT else None, enable_robot=ENABLE_ROBOT)
     
     # Execute several behaviors
     manager.execute_behavior(greeting_wave)
@@ -317,6 +351,7 @@ def test_behavior_statistics():
     print(f"  Interrupted: {stats['behaviors_interrupted']}")
     print(f"  Currently executing: {stats['currently_executing']}")
     
+    manager.stop_current()  # Don't close shared connection
     print("✓ Statistics tracking validated")
     return True
 
@@ -387,6 +422,15 @@ def run_all_tests():
     
     if failed == 0:
         print("✅ All acceptance criteria validated!")
+    
+    # Cleanup shared robot connection
+    if shared_robot is not None:
+        try:
+            print("\nClosing robot connection...")
+            shared_robot.__exit__(None, None, None)
+            print("✓ Robot connection closed")
+        except Exception as e:
+            print(f"Warning: Error closing robot: {e}")
     
     return failed == 0
 

@@ -46,5 +46,8 @@ test_output/
 *.bak
 .pytest_cache/
 
+# Model cache (HuggingFace, etc.)
+cache/
+
 # UV lock file (optional - some projects include it)
 # uv.lock
