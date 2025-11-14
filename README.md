@@ -1,88 +1,99 @@
-# Reachy Recognizer
+# Reachy Mini Store Assistant
 
-**Human-Aware AI Companion** - A complete face recognition and conversational AI system that enables Reachy Mini robot to recognize people, greet them with personalized responses, and engage in natural voice conversations.
+**Computer Vision + AI for Store Inventory Management** - An intelligent store assistant system that uses the Reachy Mini robot with edge AI (Raspberry Pi 5 + Hailo-8L) for privacy-first inventory analysis and staff interaction.
 
-## 🎯 Project Status: **COMPLETE** ✅
+## 🎯 Project Status: **PLANNING COMPLETE** ✅
 
-**All 16 stories implemented** (100% complete)
-- ✅ Face Recognition & Database Management
-- ✅ Event-Driven Architecture
-- ✅ Behavioral Coordination & Gestures
-- ✅ OpenAI TTS with High-Quality Voices
-- ✅ Voice Conversation System (STT + LLM + TTS)
-- ✅ YAML Configuration & Performance Logging
-- ✅ Full System Integration & Demos
+**PRD & Architecture Ready** - Ready for Week 1 implementation
+- ✅ Complete PRD with Top 3 quick-win features
+- ✅ Brainstorming session results (26+ features, SCAMPER techniques)
+- ✅ Hailo PoC documentation and test scripts
+- ✅ Demo project archived
+- ⏳ Week 1: Multi-Angle Capture System (NEXT)
+- ⏳ Weeks 2-3: Uniform Recognition + Gesture Controls
+- ⏳ Week 4: Integration & Store Pilot
 
 ## Overview
 
-Reachy Recognizer is a complete AI companion system that transforms the Reachy Mini robot into an aware, interactive assistant with:
+Reachy Mini Store Assistant is an edge AI system for convenience stores that prioritizes privacy while providing intelligent inventory management and staff interaction capabilities.
 
-### 🎭 Core Capabilities
-- **Real-Time Face Recognition**: Detect and recognize people with 95-98% confidence
-- **Personalized Greetings**: Natural greetings by name with coordinated gestures and OpenAI Shimmer voice
-- **Voice Conversations**: Full conversational AI with speech-to-text, LLM responses, and text-to-speech
-- **Continuous Engagement**: Lifelike idle movements and responsive head tilts during interactions
-- **Event-Driven Architecture**: Robust event system for PERSON_RECOGNIZED, PERSON_UNKNOWN, PERSON_DEPARTED
+### 🎭 Core Features (MVP - 4 weeks)
 
-### 🚀 Key Features
-- **OpenAI TTS Integration**: High-quality Shimmer voice for all interactions
-- **Adaptive Conversation**: Context-aware responses using GPT-4o-mini (optimized for speed)
-- **Behavior Coordination**: Synchronized gestures, speech, and idle movements
-- **Performance Optimized**: ~4.9s greeting coordination, <1s conversation responses
-- **MuJoCo Simulation**: Full testing without physical hardware
-- **YAML Configuration**: Easy customization of all system parameters
+**1. Multi-Angle Capture System** (Week 1)
+- Robot head automatically captures 3-5 angles of cigarette shelves
+- Eliminates glare and occlusion on shiny packaging
+- Frame quality assessment and best-frame selection
+- 90%+ successful pack identification
+
+**2. Uniform Recognition System** (Weeks 2-3)
+- Privacy-friendly staff vs customer identification
+- Color-pattern detection (no face recognition)
+- 85%+ classification accuracy
+- No PII storage - embeddings only
+
+**3. Gesture Control System** (Weeks 2-3)
+- Fast interaction: 👍 Approve, 👋 Skip, ✋ Stop
+- MediaPipe hand detection on Raspberry Pi 5
+- <1 second response time
+- 95%+ gesture recognition rate
+
+### 🚀 Key Principles
+- **Privacy-First**: Embeddings only, no face recognition or photo storage
+- **Quick Wins**: 4-week MVP timeline with practical features
+- **Edge AI**: Raspberry Pi 5 + Hailo-8L AI HAT (26 TOPS)
+- **Store Ready**: Convenience store deployment for tobacco inventory
 
 ## Quick Start
 
 ### Prerequisites
 
 - **Python 3.11+** (3.12 recommended)
-- **Webcam** (for face detection)
-- **OpenAI API key** (for voice features)
-- **Reachy Mini SDK** (optional - for robot control/simulation)
+- **Reachy Mini** (physical robot, tethered version)
+- **Raspberry Pi 5** (8GB RAM recommended)
+- **Hailo-8L AI HAT** (26 TOPS AI accelerator)
+- **Camera** (Reachy built-in camera)
 
 ### Installation
 
 1. **Clone the repository:**
    ```bash
    git clone https://github.com/chelleboyer/reachy-recognizer.git
-   cd reachy-recognizer
+   cd reachy-mini-dev
    ```
 
-2. **Create and activate virtual environment:**
+2. **Set up Raspberry Pi 5 + Hailo:**
+   Follow the complete setup guide:
    ```bash
-   python -m venv .venv
-   
-   # Windows PowerShell
-   .venv\Scripts\Activate.ps1
-   
-   # Windows Command Prompt
-   .venv\Scripts\activate.bat
-   
-   # macOS/Linux
-   source .venv/bin/activate
+   # See hailo_poc/ for detailed instructions
+   cd hailo_poc
+   cat QUICK_START.md
    ```
 
-3. **Install dependencies:**
+3. **Install Hailo software:**
    ```bash
-   # Install core packages
-   pip install opencv-python face-recognition openai python-dotenv pyyaml pygame pyaudio
+   # On Raspberry Pi 5
+   git clone https://github.com/hailo-ai/hailo-rpi5-examples.git
+   cd hailo-rpi5-examples
+   ./install.sh
+   ```
+
+4. **Install Python dependencies:**
+   ```bash
+   # Core packages
+   pip install opencv-python mediapipe scikit-image pyyaml
    
-   # Install Reachy SDK (optional - for robot control)
+   # Reachy SDK
    pip install reachy-mini
+   
+   # Hailo integration
+   pip install hailo_platform
    ```
 
-4. **Configure OpenAI API:**
-   Create a `.env` file in the project root:
+5. **Download YOLO model:**
    ```bash
-   OPENAI_API_KEY=your_api_key_here
+   # Get YOLOv8 nano model for Hailo (.hef format)
+   # See hailo_poc/MANUAL_MODEL_DOWNLOAD.md for instructions
    ```
-
-5. **Add a face to the database:**
-   ```bash
-   python add_face.py
-   ```
-   Follow the prompts to capture your face and add it to the system.
 
 ### Running the System
 
@@ -316,13 +327,17 @@ pytest tests/test_story_4_3_integration.py
 
 ## Documentation
 
-- **[Product Requirements](docs/prd.md)**: Complete PRD with 5 milestones and 8 functional requirements
-- **[Epic Breakdown](docs/epics.md)**: 16 stories across 4 epics (ALL COMPLETE)
-- **[Setup Guide](docs/SETUP.md)**: Detailed development environment setup
-- **[Configuration Guide](docs/CONFIGURATION.md)**: Complete reference for all configuration settings
-- **[Project Structure](docs/PROJECT_STRUCTURE.md)**: Code organization and architecture
-- **[Voice Design](docs/voice-response-design.md)**: Voice system architecture and response patterns
-- **[Story 4.3](docs/stories/story-4.3-demo-documentation.md)**: End-to-end demo documentation
+### New Store Deployment Project
+- **[Product Requirements](docs/prd.md)**: Complete PRD for store assistant with Top 3 features
+- **[Brainstorming Results](docs/brainstorming-session-results-2025-11-02.md)**: 26+ features from SCAMPER session
+- **[Workflow Status](docs/bmm-workflow-status.md)**: Current project status and next steps
+- **[Hailo PoC Status](hailo_poc/STATUS.md)**: Hardware setup and testing status
+- **[Setup Guide](docs/SETUP.md)**: Development environment setup
+
+### Demo Project Archive
+- **[Demo Archive](docs/demo-archive/)**: Original face recognition demo project documentation
+- **[Demo PRD](docs/demo-archive/prd.md)**: Original Reachy Recognizer PRD
+- **[Demo Epics](docs/demo-archive/epics.md)**: 16 stories across 4 epics (completed demo)
 
 ## Architecture
 
@@ -350,6 +365,24 @@ This project follows the BMAD (Business Method Agile Development) workflow for s
 
 See LICENSE files in respective subdirectories.
 
+## Project Pivot
+
+This project evolved from **Reachy Recognizer** (face recognition demo) to **Reachy Mini Store Assistant** (store deployment system):
+
+### What Changed
+- **From:** Simulation-based face recognition demo
+- **To:** Privacy-first store inventory and staff interaction system
+- **Why:** Real-world deployment needs, privacy requirements, quick-win focus
+
+### What Was Preserved
+- Core infrastructure (event system, behavior coordination, configuration)
+- Reachy SDK integration
+- Testing patterns
+- Development workflow
+
+### Demo Project Status
+The original Reachy Recognizer demo (face recognition system) is **100% complete** with all 16 stories implemented. Documentation archived in `docs/demo-archive/`.
+
 ## Contact
 
 - **Repository**: https://github.com/chelleboyer/reachy-recognizer
@@ -357,30 +390,34 @@ See LICENSE files in respective subdirectories.
 
 ---
 
-**Project Status**: ✅ **100% COMPLETE** - All 16 stories implemented!
+**Current Project Status**: ✅ **PLANNING COMPLETE** - Ready for Week 1 implementation!
 
-- ✅ **Epic 1**: Foundation & Simulation Setup (4/4 stories)
-  - Story 1.1: Environment setup and camera integration
-  - Story 1.2: Reachy SDK connection
-  - Story 1.3: Camera-to-Reachy integration
-  - Story 1.4: End-to-end smoke test
+- ✅ **Phase 0: Discovery & Planning**
+  - Brainstorming session (SCAMPER) - 26+ features
+  - Feature prioritization
+  - PRD creation with 4-week timeline
+  - Hailo PoC documentation
+  - Demo project archived
 
-- ✅ **Epic 2**: Vision & Recognition Pipeline (5/5 stories)
-  - Story 2.1: Face detection system
-  - Story 2.2: Face encoding
-  - Story 2.3: Face recognition
-  - Story 2.4: Recognition pipeline
-  - Story 2.5: Event system
+- ⏳ **Epic 1: Multi-Angle Capture System** (Week 1 - NEXT)
+  - Story 1.1: Basic Multi-Angle Head Movement (5 pts)
+  - Story 1.2: Frame Quality Assessment (8 pts)
+  - Story 1.3: Best Frame Selection & OCR (8 pts)
 
-- ✅ **Epic 3**: Behavior Engine & Response System (4/4 stories)
-  - Story 3.1: Greeting behaviors
-  - Story 3.2: TTS integration
-  - Story 3.3: Greeting coordinator
-  - Story 3.4: Voice enhancement (OpenAI TTS + varied greetings)
+- ⏳ **Epic 2: Uniform Recognition System** (Weeks 2-3)
+  - Story 2.1: Person Detection with Torso ROI (5 pts)
+  - Story 2.2: Color-Pattern Feature Extraction (5 pts)
+  - Story 2.3: Staff vs Customer Classification (13 pts)
 
-- ✅ **Epic 4**: Configuration & Monitoring (3/3 stories)
-  - Story 4.1: YAML configuration system
-  - Story 4.2: Performance logging & analytics
-  - Story 4.3: End-to-end demo & documentation
+- ⏳ **Epic 3: Gesture Control System** (Weeks 2-3)
+  - Story 3.1: MediaPipe Hand Detection Setup (3 pts)
+  - Story 3.2: Three-Gesture Recognition (13 pts)
+  - Story 3.3: Gesture-to-Command Mapping (5 pts)
+  - Story 3.4: Visual Feedback & UI Integration (5 pts)
 
-**System Ready for Production Deployment! 🚀**
+- ⏳ **Epic 4: Integration & Testing** (Week 4)
+  - Story 4.1: End-to-End Integration Testing
+  - Story 4.2: Store Pilot Deployment Prep
+  - Story 4.3: Performance Optimization & Documentation
+
+**Next Milestone**: Week 1 - Multi-Angle Capture working! 🚀

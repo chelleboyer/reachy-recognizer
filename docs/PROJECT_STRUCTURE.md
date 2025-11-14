@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Reachy Recognizer codebase is organized into modular subsystems under `src/`:
+The Reachy Mini Store Assistant codebase is organized into modular subsystems under `src/`. This project has evolved from a demo face recognition system (archived in `docs/demo-archive/`) to a privacy-first store deployment system.
 
 ```
 c:\code\reachy-mini-dev\
