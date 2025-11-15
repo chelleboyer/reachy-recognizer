@@ -35,13 +35,13 @@ import numpy as np
 import yaml
 
 try:
-    import mediapipe as mp
-    from mediapipe.tasks import python
-    from mediapipe.tasks.python import vision
+    import mediapipe as mp  # type: ignore
+    from mediapipe.tasks import python  # type: ignore
+    from mediapipe.tasks.python import vision  # type: ignore
     MEDIAPIPE_AVAILABLE = True
 except ImportError:
     MEDIAPIPE_AVAILABLE = False
-    mp = None
+    mp = None  # type: ignore
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -167,7 +167,7 @@ class HandDetector:
         self.normalize_coordinates = output_config.get('normalize_coordinates', True)
         
         # Initialize MediaPipe Hands
-        self.mp_hands = mp.solutions.hands
+        self.mp_hands = mp.solutions.hands  # type: ignore
         self.hands = self.mp_hands.Hands(
             static_image_mode=self.static_image_mode,
             max_num_hands=self.max_num_hands,
