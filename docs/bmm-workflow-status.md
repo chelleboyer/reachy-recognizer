@@ -57,9 +57,9 @@ NEXT_AGENT: dev
 **Status:** All 3 stories implemented and tested  
 **Story Files Created:**
 - [Epic 1 Definition](./epic-1-multi-angle-capture.md) ✅
-- [Story 1.1: Basic Multi-Angle Head Movement](./story-1.1-basic-multi-angle-head-movement.md) (5 pts) - ✅ COMPLETE (2025-11-15)
-- [Story 1.2: Frame Quality Assessment](./story-1.2-frame-quality-assessment.md) (8 pts) - ✅ COMPLETE (2025-11-15)
-- [Story 1.3: Best Frame Selection & OCR](./story-1.3-best-frame-selection.md) (8 pts) - ✅ COMPLETE (2025-11-15)
+- [Story 1.1: Basic Multi-Angle Head Movement](./stories/story-1.1-basic-multi-angle-head-movement.md) (5 pts) - ✅ COMPLETE (2025-11-15)
+- [Story 1.2: Frame Quality Assessment](./stories/story-1.2-frame-quality-assessment.md) (8 pts) - ✅ COMPLETE (2025-11-15)
+- [Story 1.3: Best Frame Selection & OCR](./stories/story-1.3-best-frame-selection.md) (8 pts) - ✅ COMPLETE (2025-11-15)
 
 **Implementation Summary:**
 
@@ -97,9 +97,9 @@ NEXT_AGENT: dev
 **Status:** All 3 stories implemented and tested  
 **Story Files Created:**
 - [Epic 2 Definition](./epic-2-uniform-recognition.md) ✅
-- [Story 2.1: Person Detection with Torso ROI](./story-2.1-person-detection-torso-roi.md) (5 pts) - ✅ COMPLETE (2025-11-15)
-- [Story 2.2: Color-Pattern Feature Extraction](./story-2.2-color-pattern-feature-extraction.md) (5 pts) - ✅ COMPLETE (2025-11-15)
-- [Story 2.3: Staff vs Customer Classification](./story-2.3-staff-customer-classification.md) (13 pts) - ✅ COMPLETE (2025-11-15)
+- [Story 2.1: Person Detection with Torso ROI](./stories/story-2.1-person-detection-torso-roi.md) (5 pts) - ✅ COMPLETE (2025-11-15)
+- [Story 2.2: Color-Pattern Feature Extraction](./stories/story-2.2-color-pattern-feature-extraction.md) (5 pts) - ✅ COMPLETE (2025-11-15)
+- [Story 2.3: Staff vs Customer Classification](./stories/story-2.3-staff-customer-classification.md) (13 pts) - ✅ COMPLETE (2025-11-15)
 
 **Implementation Summary:**
 
@@ -158,8 +158,8 @@ NEXT_AGENT: dev
 **Status:** In Progress (Story 3.1 complete)  
 **Story Files Created:**
 - [Epic 3 Planning Document](./epic-3-gesture-control-plan.md) ✅
-- [Story 3.1: MediaPipe Hand Detection Setup](./story-3.1-hand-detection.md) (3 pts) - ✅ COMPLETE (2025-11-15)
-- [Story 3.2: Three-Gesture Recognition](./story-3.2-three-gesture-recognition.md) (13 pts) - ✅ COMPLETE (2025-11-15)
+- [Story 3.1: MediaPipe Hand Detection Setup](./stories/story-3.1-hand-detection.md) (3 pts) - ✅ COMPLETE (2025-11-15)
+- [Story 3.2: Three-Gesture Recognition](./stories/story-3.2-three-gesture-recognition.md) (13 pts) - ✅ COMPLETE (2025-11-15)
 - Story 3.3: Gesture-to-Command Mapping (5 pts) - Not started
 - Story 3.4: Visual Feedback & UI Integration (5 pts) - Not started
 
@@ -247,9 +247,9 @@ NEXT_AGENT: dev
 
 - [PRD](./prd.md) - Product Requirements Document
 - [Epic 1: Multi-Angle Capture System](./epic-1-multi-angle-capture.md)
-- [Story 1.1: Basic Multi-Angle Head Movement](./story-1.1-basic-multi-angle-head-movement.md)
-- [Story 1.2: Frame Quality Assessment](./story-1.2-frame-quality-assessment.md)
-- [Story 1.3: Best Frame Selection & OCR](./story-1.3-best-frame-selection.md)
+- [Story 1.1: Basic Multi-Angle Head Movement](./stories/story-1.1-basic-multi-angle-head-movement.md)
+- [Story 1.2: Frame Quality Assessment](./stories/story-1.2-frame-quality-assessment.md)
+- [Story 1.3: Best Frame Selection & OCR](./stories/story-1.3-best-frame-selection.md)
 - [Brainstorming Results](./brainstorming-session-results-2025-11-02.md)
 - [Hailo PoC Status](../hailo_poc/STATUS.md)
 - [Demo Archive](./demo-archive/)
