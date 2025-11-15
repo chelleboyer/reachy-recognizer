@@ -1,0 +1,88 @@
+# Multi-Angle Capture Configuration - Story 1.1
+#
+# Configuration for multi-angle capture system that eliminates glare and
+# occlusion on reflective surfaces (e.g., cigarette packaging).
+
+multi_angle_capture:
+  # Angle configuration (AC1)
+  angles:
+    # Horizontal yaw angles in degrees
+    # Default sequence captures 5 angles spanning ±45° range
+    yaw: [-45, -22, 0, 22, 45]
+    
+    # Vertical pitch angle in degrees (negative = look down)
+    # Default looks slightly down at shelf level
+    pitch: -10
+  
+  # Movement configuration (AC2, AC3)
+  movement:
+    # Speed factor for head movements (0.0-1.0)
+    # Lower = smoother but slower, Higher = faster but more jerky
+    # 0.7 provides good balance of speed and smoothness
+    speed_factor: 0.7
+    
+    # Stabilization pause after movement in milliseconds (AC3)
+    # Camera needs time to stabilize before capturing frame
+    # Default: 100ms as per acceptance criteria
+    stabilization_pause_ms: 100
+    
+    # Maximum time allowed per angle movement in seconds (AC2)
+    # Timeout prevents hanging if movement fails
+    # Target: <2 seconds per acceptance criteria
+    max_movement_time_sec: 2
+    
+    # Return to neutral position after capture (AC5)
+    # If true, head returns to (0°, 0°) after sequence
+    return_to_neutral: true
+  
+  # Camera configuration (AC4)
+  camera:
+    # Camera device ID (0 = default, 1+ = external)
+    device_id: 0
+    
+    # Frame resolution [width, height]
+    # Default: 640x480 for good balance of quality and speed
+    resolution: [640, 480]
+    
+    # Frames per second (not critical for capture, used for camera init)
+    fps: 30
+    
+    # Clear frame buffer after movement (AC3)
+    # Discards stale frames from buffer before capture
+    # Recommended: true to ensure fresh frames
+    frame_buffer_clear: true
+  
+  # Performance configuration (AC1)
+  performance:
+    # Maximum time for entire sequence in seconds (AC1)
+    # Target: <10 seconds per acceptance criteria
+    # Used for monitoring/logging, not enforcement
+    max_sequence_time_sec: 10
+    
+    # Enable performance warnings
+    # Logs warnings if timing targets are exceeded
+    warn_on_slow_movement: true
+    warn_on_slow_sequence: true
+
+# Example alternative configurations:
+#
+# Fast 3-angle capture (for quick scans):
+# angles:
+#   yaw: [-30, 0, 30]
+#   pitch: -10
+# movement:
+#   speed_factor: 0.9
+#   stabilization_pause_ms: 50
+#
+# Detailed 7-angle capture (for difficult products):
+# angles:
+#   yaw: [-60, -40, -20, 0, 20, 40, 60]
+#   pitch: -15
+# movement:
+#   speed_factor: 0.6
+#   stabilization_pause_ms: 150
+#
+# High shelf capture (looking up):
+# angles:
+#   yaw: [-45, -22, 0, 22, 45]
+#   pitch: 10  # Positive = look up

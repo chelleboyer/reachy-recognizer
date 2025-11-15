@@ -107,7 +107,7 @@ class BehaviorManager:
     of robot movements in response to recognition events.
     """
     
-    def __init__(self, reachy: Optional[object] = None, enable_robot: Optional[bool] = None):
+    def __init__(self, reachy: Optional['ReachyMini'] = None, enable_robot: Optional[bool] = None):
         """
         Initialize behavior manager.
         
@@ -219,7 +219,7 @@ class BehaviorManager:
                     break
                 
                 # Execute action
-                if self.enable_robot:
+                if self.enable_robot and self.reachy is not None:
                     try:
                         pose = action.to_pose_matrix()
                         self.reachy.set_target(head=pose)
@@ -280,9 +280,9 @@ class BehaviorManager:
         if self.auto_connected and self.reachy is not None:
             try:
                 logger.info("Closing Reachy connection...")
-                # ReachyMini uses __exit__ for cleanup, not close()
-                if hasattr(self.reachy, '__exit__'):
-                    self.reachy.__exit__(None, None, None)
+                # Disconnect using the client (ReachyMini's cleanup method)
+                if hasattr(self.reachy, 'client'):
+                    self.reachy.client.disconnect()  # type: ignore
             except Exception as e:
                 logger.warning(f"Error closing Reachy connection: {e}")
     

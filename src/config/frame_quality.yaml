@@ -1,0 +1,100 @@
+# Frame Quality Assessment Configuration
+# Story 1.2 - Frame Quality Assessment
+#
+# This configuration controls the quality assessment algorithms that detect
+# glare and blur in captured frames from the multi-angle capture system.
+
+frame_quality:
+  # Glare Detection Settings
+  # Detects bright spots that could obscure text on cigarette packages
+  glare_detection:
+    # Threshold for flagging frames as having glare (0-100 scale)
+    # Frames with glare_score > threshold are flagged
+    threshold: 70
+    
+    # Pixel brightness value to consider as "bright" (0-255 grayscale)
+    # Values above this are potential glare regions
+    bright_pixel_value: 200
+    
+    # Minimum percentage of frame that must be bright to count as glare
+    # Prevents false positives from small specular highlights
+    min_region_size: 0.05  # 5% of frame
+  
+  # Blur Detection Settings
+  # Uses Laplacian variance to measure image sharpness/focus
+  blur_detection:
+    # Threshold for flagging frames as blurry (0-100 scale)
+    # Frames with blur_score < threshold are flagged
+    threshold: 50
+    
+    # Laplacian kernel size for edge detection (1, 3, 5, etc.)
+    # Larger kernels detect coarser edges
+    laplacian_kernel_size: 3
+    
+    # Minimum Laplacian variance for sharp image
+    # Images below this are considered very blurry (score = 0)
+    variance_min: 100
+    
+    # Maximum Laplacian variance for normalization
+    # Images above this are considered very sharp (score = 100)
+    # Adjust based on camera characteristics
+    variance_max: 2000
+  
+  # Composite Quality Scoring
+  # Combines glare and blur into overall quality metric
+  quality_scoring:
+    # Weight for glare in composite score (0-1)
+    # Higher weight = glare has more impact on quality
+    glare_weight: 0.5
+    
+    # Weight for blur in composite score (0-1)
+    # Higher weight = blur has more impact on quality
+    blur_weight: 0.5
+    
+    # Note: glare_weight + blur_weight should typically = 1.0
+    
+    # Threshold for flagging frames as low quality
+    # Frames with quality_score < threshold need attention
+    low_quality_threshold: 40
+  
+  # Performance Limits
+  performance:
+    # Maximum time per frame assessment (milliseconds)
+    # Warning logged if assessment exceeds this
+    max_processing_time_ms: 100
+
+
+# Alternative Configuration Profiles
+# Uncomment and adjust as needed for different use cases
+
+# High Glare Sensitivity (for very reflective surfaces)
+# frame_quality:
+#   glare_detection:
+#     threshold: 50  # Lower threshold = more sensitive
+#     bright_pixel_value: 180
+#     min_region_size: 0.03
+#   blur_detection:
+#     threshold: 50
+#     variance_min: 100
+#     variance_max: 2000
+#   quality_scoring:
+#     glare_weight: 0.7  # Prioritize glare over blur
+#     blur_weight: 0.3
+
+# High Blur Sensitivity (for critical text clarity)
+# frame_quality:
+#   glare_detection:
+#     threshold: 70
+#     bright_pixel_value: 200
+#     min_region_size: 0.05
+#   blur_detection:
+#     threshold: 65  # Higher threshold = stricter
+#     variance_min: 150
+#     variance_max: 2500
+#   quality_scoring:
+#     glare_weight: 0.3
+#     blur_weight: 0.7  # Prioritize blur over glare
+
+# Balanced (default profile - already active above)
+# Best for general-purpose cigarette package recognition
+# Works well with multi-angle capture to eliminate issues

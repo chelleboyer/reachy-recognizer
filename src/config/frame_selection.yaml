@@ -1,0 +1,150 @@
+# Frame Selection Configuration
+# Story 1.3 - Best Frame Selection & OCR
+#
+# This configuration controls frame selection strategy and OCR parameters
+# for extracting text from the best quality frames in a multi-angle sequence.
+
+frame_selector:
+  # Quality Thresholds for Selection Strategy
+  thresholds:
+    # If any frame has quality >= this value, use single best frame
+    # This indicates excellent quality that doesn't need fusion
+    excellent_quality: 80
+    
+    # If best frame is >= this but < excellent_quality, try fusion
+    # Multiple acceptable frames can be combined for better results
+    acceptable_quality: 60
+    
+    # Minimum quality to process
+    # If all frames are below this, fail (don't attempt OCR)
+    minimum_quality: 60
+  
+  # Multi-Frame Fusion Parameters
+  fusion:
+    # Maximum number of frames to fuse (2 or 3 typical)
+    # More frames = more averaging but potential for blur
+    max_frames_to_fuse: 3
+    
+    # Weight frames by their quality scores
+    # If false, use equal weights
+    weight_by_quality: true
+    
+    # Method to normalize quality scores to weights
+    # Options: "softmax" (emphasizes differences) or "linear" (proportional)
+    normalization: "softmax"
+  
+  # Failure Handling
+  failure_handling:
+    # Log all quality scores when sequence fails
+    log_all_scores: true
+    
+    # Send alert/notification on failure (for future integration)
+    send_alert: false
+    
+    # Fallback to best available frame even if below threshold
+    # If true: always process something (may get low-quality results)
+    # If false: raise error and don't process bad frames
+    fallback_to_best: false
+
+
+# OCR Configuration
+ocr:
+  # OCR Engine Selection
+  # Options: "easyocr", "tesseract", "mock" (for testing)
+  engine: "easyocr"
+  
+  # Languages to detect
+  # EasyOCR supports 80+ languages, list all expected languages
+  languages: ["en"]
+  
+  # GPU Acceleration
+  # Pi5 doesn't have CUDA-capable GPU, so false
+  # Set true if running on machine with CUDA
+  gpu: false
+  
+  # Image Preprocessing
+  # Improves OCR accuracy on challenging images
+  preprocessing:
+    # Convert to grayscale (most OCR engines work better on grayscale)
+    grayscale: true
+    
+    # Apply CLAHE (Contrast Limited Adaptive Histogram Equalization)
+    # Enhances local contrast, helps with varied lighting
+    contrast_enhancement: true
+    clahe_clip_limit: 2.0
+    clahe_tile_grid_size: [8, 8]
+    
+    # Denoise with bilateral filter
+    # Removes noise while preserving edges (important for text)
+    denoise: true
+    bilateral_d: 9
+    bilateral_sigma_color: 75
+    bilateral_sigma_space: 75
+    
+    # Sharpen with unsharp mask (optional)
+    # Can improve text edge definition
+    sharpen: false
+    sharpen_sigma: 1.0
+    sharpen_amount: 1.5
+  
+  # EasyOCR Specific Parameters
+  easyocr:
+    # Decoder: "greedy" (fast) or "beamsearch" (accurate)
+    decoder: "greedy"
+    
+    # Batch size for processing (1 for Pi5 to save memory)
+    batch_size: 1
+    
+    # Detection parameters
+    text_threshold: 0.7       # Confidence threshold for text detection
+    low_text: 0.4             # Low confidence threshold
+    link_threshold: 0.4       # Link threshold for text regions
+    
+    # Recognition parameters
+    min_size: 20              # Minimum text height (pixels)
+    contrast_ths: 0.1         # Contrast threshold
+    adjust_contrast: 0.5      # Contrast adjustment
+  
+  # Performance Limits
+  performance:
+    # Maximum OCR processing time per frame (seconds)
+    max_processing_time_sec: 3
+    
+    # Retry on timeout
+    retry_on_timeout: false
+    
+    # Maximum retries if enabled
+    max_retries: 1
+
+
+# Alternative Profiles
+# Uncomment to try different configurations
+
+# High Accuracy Profile (slower, more accurate)
+# ocr:
+#   engine: "easyocr"
+#   preprocessing:
+#     grayscale: true
+#     contrast_enhancement: true
+#     denoise: true
+#     sharpen: true
+#   easyocr:
+#     decoder: "beamsearch"
+#     text_threshold: 0.8
+#     min_size: 10
+#   performance:
+#     max_processing_time_sec: 5
+
+# Fast Profile (quicker, less preprocessing)
+# ocr:
+#   engine: "easyocr"
+#   preprocessing:
+#     grayscale: true
+#     contrast_enhancement: false
+#     denoise: false
+#     sharpen: false
+#   easyocr:
+#     decoder: "greedy"
+#     batch_size: 1
+#   performance:
+#     max_processing_time_sec: 2

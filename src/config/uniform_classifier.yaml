@@ -1,0 +1,71 @@
+# Uniform Classifier Configuration
+# Story 2.3: Staff vs Customer Classification
+
+uniform_classifier:
+  model:
+    type: "svm"  # "svm" or "mlp"
+    model_path: "models/uniform_classifier_v1.pkl"
+    version: "1.0"
+    input_dim: 512  # Match PCA output from Story 2.2
+    
+  svm:
+    kernel: "rbf"
+    C: 1.0
+    gamma: "scale"
+    probability: true  # Enable probability estimates
+    
+  mlp:
+    hidden_layers: [256, 128]
+    activation: "relu"
+    dropout: 0.2
+    epochs: 50
+    batch_size: 32
+    learning_rate: 0.001
+    
+  classification:
+    confidence_threshold: 0.75  # Min confidence for certain classification
+    labels:
+      - "staff"
+      - "customer"
+      
+  multi_frame:
+    enabled: true
+    num_frames: 5  # Collect 5 frames per person
+    voting_method: "average_features"  # "average_features" or "majority_vote"
+    min_frames: 3  # Minimum frames required
+    
+  performance:
+    max_latency_ms: 500  # Total pipeline latency target
+    enable_profiling: true
+    
+  privacy:
+    log_features: false  # Don't log raw feature vectors
+    log_predictions: true  # Log labels and confidence only
+    never_store_images: true  # Enforce no image storage
+
+# Alternative profiles for different scenarios
+
+profiles:
+  # Fast single-frame classification (disabled multi-frame)
+  fast:
+    multi_frame:
+      enabled: false
+    classification:
+      confidence_threshold: 0.70  # Lower threshold for faster decisions
+      
+  # High confidence mode (stricter threshold, more frames)
+  high_confidence:
+    multi_frame:
+      enabled: true
+      num_frames: 7
+      min_frames: 5
+    classification:
+      confidence_threshold: 0.85
+      
+  # Majority vote mode (classify each frame individually)
+  majority_vote:
+    multi_frame:
+      enabled: true
+      voting_method: "majority_vote"
+      num_frames: 5
+      min_frames: 3

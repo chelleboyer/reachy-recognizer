@@ -1,0 +1,64 @@
+# Person Detection Configuration - Story 2.1
+
+person_detection:
+  model:
+    name: "yolov8n"  # Nano variant for speed on Pi5
+    confidence_threshold: 0.7  # Minimum detection confidence
+    iou_threshold: 0.5  # Intersection over union for NMS
+    device: "cpu"  # Pi5 doesn't have CUDA
+    
+  torso_extraction:
+    # Vertical range as fraction of person height [start, end]
+    # 0.0 = top of person, 1.0 = bottom
+    # Default [0.0, 0.6] = top 60% (excludes legs, captures chest/vest)
+    vertical_range: [0.0, 0.6]
+    
+    horizontal_center: true  # Center torso horizontally within person bbox
+    
+    # Minimum valid torso dimensions (pixels)
+    min_width: 50
+    min_height: 80
+    
+  preprocessing:
+    resize_size: [224, 224]  # Standard size for feature extraction
+    
+    # Normalization method:
+    # - "standard": 0-255 -> 0-1
+    # - "imagenet": 0-255 -> -1 to 1
+    # - "none": Keep original range
+    normalization: "standard"
+    
+    # Interpolation method for resizing
+    # Options: "bilinear", "nearest", "cubic"
+    interpolation: "bilinear"
+    
+  performance:
+    max_detections: 10  # Maximum people to process per frame
+    batch_processing: false  # Process frames individually
+
+# Alternative profiles for different scenarios
+
+profiles:
+  # High accuracy profile (slower but more detections)
+  high_accuracy:
+    model:
+      confidence_threshold: 0.5
+      iou_threshold: 0.3
+    torso_extraction:
+      min_width: 40
+      min_height: 60
+      
+  # Fast profile (higher threshold for speed)
+  fast:
+    model:
+      confidence_threshold: 0.8
+      iou_threshold: 0.6
+    performance:
+      max_detections: 5
+      
+  # Close range (larger torso region)
+  close_range:
+    torso_extraction:
+      vertical_range: [0.1, 0.7]  # Slightly lower, captures more detail
+      min_width: 80
+      min_height: 120

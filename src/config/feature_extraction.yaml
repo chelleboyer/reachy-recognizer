@@ -1,0 +1,64 @@
+# Feature Extraction Configuration - Story 2.2
+
+feature_extraction:
+  # HSV Color Histogram Configuration
+  color_histogram:
+    color_space: "HSV"  # HSV or RGB
+    bins_per_channel: 16  # 16x16x16 = 4096 bins
+    normalize: "L1"  # L1 (sum to 1) or L2 (unit vector)
+    
+  # Pattern Descriptor Configuration
+  pattern_descriptor:
+    grid_size: [3, 3]  # 3x3 grid over torso
+    edge_detector: "canny"  # "canny" or "sobel"
+    canny_threshold: [50, 150]  # Low and high thresholds for Canny
+    edge_density_method: "mean"  # "mean" or "max" edge pixels per cell
+    
+  # Dominant Color Extraction
+  dominant_colors:
+    num_colors: 3  # Top K colors to extract
+    min_percentage: 5.0  # Ignore colors <5% of pixels (except first)
+    clustering_method: "kmeans"  # "kmeans" or "median_cut"
+    
+  # Dimensionality Reduction
+  dimensionality_reduction:
+    method: "pca"  # "pca" or "none"
+    target_dimensions: 512  # Reduce 4105-dim to 512-dim
+    pca_model_path: "models/uniform_pca.pkl"  # Pre-trained PCA model
+    
+  # Feature Vector Normalization
+  normalization:
+    final_norm: "L2"  # L2 normalization for feature vector
+
+# Alternative Profiles
+
+profiles:
+  # High detail profile - more bins, finer grid
+  high_detail:
+    color_histogram:
+      bins_per_channel: 32  # 32x32x32 = 32768 bins
+    pattern_descriptor:
+      grid_size: [5, 5]  # 5x5 grid = 25 values
+    dimensionality_reduction:
+      target_dimensions: 1024  # Larger feature vector
+      
+  # Fast profile - fewer bins, coarser grid
+  fast:
+    color_histogram:
+      bins_per_channel: 8  # 8x8x8 = 512 bins
+    pattern_descriptor:
+      grid_size: [2, 2]  # 2x2 grid = 4 values
+      canny_threshold: [100, 200]  # Higher thresholds = fewer edges
+    dimensionality_reduction:
+      target_dimensions: 256  # Smaller feature vector
+      
+  # No PCA profile - use full feature vector
+  no_pca:
+    dimensionality_reduction:
+      method: "none"  # Disable PCA
+      
+  # Sensitive edge detection - for subtle patterns
+  sensitive_edges:
+    pattern_descriptor:
+      canny_threshold: [20, 100]  # Lower thresholds = more edges
+      edge_density_method: "max"  # Use maximum edge density
