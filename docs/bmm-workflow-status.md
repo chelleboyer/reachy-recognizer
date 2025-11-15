@@ -12,18 +12,18 @@ WORKFLOW_PATH: greenfield-level-2.yaml
 ## Current State
 
 CURRENT_PHASE: 2-Development
-CURRENT_WORKFLOW: Epic 2 Complete - Continue Development
+CURRENT_WORKFLOW: Epic 3 Story 3.1 Complete - Continue Development
 CURRENT_AGENT: dev
 PHASE_1_COMPLETE: true
-PHASE_2_COMPLETE: false (Epic 1 complete, Epic 2 complete, Epic 3-4 remaining)
+PHASE_2_COMPLETE: false (Epic 1 complete, Epic 2 complete, Epic 3 in progress, Epic 4 pending)
 PHASE_3_COMPLETE: false
 PHASE_4_COMPLETE: false
 
 ## Next Action
 
-NEXT_ACTION: Begin Epic 3 planning (Gesture Control System)
-NEXT_COMMAND: *plan (Epic 3)
-NEXT_AGENT: plan
+NEXT_ACTION: Develop Story 3.2 (Three-Gesture Recognition)
+NEXT_COMMAND: *develop (Story 3.2)
+NEXT_AGENT: dev
 
 ## Project Overview
 
@@ -155,11 +155,36 @@ NEXT_AGENT: plan
 **Progress:** ✅ 3/3 stories complete (23/23 story points = 100%)
 
 ### Epic 3: Gesture Control System (Weeks 2-3)
-**Status:** Not yet planned
-- Story 3.1: MediaPipe Hand Detection Setup (3 pts)
-- Story 3.2: Three-Gesture Recognition (13 pts)
-- Story 3.3: Gesture-to-Command Mapping (5 pts)
-- Story 3.4: Visual Feedback & UI Integration (5 pts)
+**Status:** In Progress (Story 3.1 complete)  
+**Story Files Created:**
+- [Epic 3 Planning Document](./epic-3-gesture-control-plan.md) ✅
+- [Story 3.1: MediaPipe Hand Detection Setup](./story-3.1-hand-detection.md) (3 pts) - ✅ COMPLETE (2025-11-15)
+- Story 3.2: Three-Gesture Recognition (13 pts) - Not started
+- Story 3.3: Gesture-to-Command Mapping (5 pts) - Not started
+- Story 3.4: Visual Feedback & UI Integration (5 pts) - Not started
+
+**Implementation Summary:**
+
+**Story 3.1** - MediaPipe hand detection setup:
+- HandDetector class with MediaPipe Hands integration
+- HandLandmarks dataclass with 21 landmarks per hand
+- Left/right hand differentiation
+- Performance tracking: FPS, latency, detection counts
+- Configuration: hand_detection.yaml with 4 sections (mediapipe, performance, output, debug)
+- Target performance: 10+ FPS achieved in tests
+- 24/24 tests passing (15 unit + 9 integration)
+- Context manager support for resource cleanup
+
+**Epic Metrics (so far):**
+- **Story Points Complete**: 3/26 (12%)
+- **Total Tests**: 24 passing
+- **Lines of Code**: ~500 (implementation + tests + config)
+- **Configuration Files**: 1 (hand_detection.yaml)
+- **Dependencies**: mediapipe>=0.10.8
+
+**Next:** Story 3.2 (Three-Gesture Recognition - thumbs up, wave, palm stop)
+
+**Progress:** ✅ 1/4 stories complete (3/26 story points = 12%)
 
 ### Epic 4: Integration & Testing (Week 4)
 **Status:** Not yet planned
@@ -249,12 +274,18 @@ NEXT_AGENT: plan
   - Files: src/vision/uniform_classifier.py, src/config/uniform_classifier.yaml
   - Tests: 50 passing (32 unit + 18 integration)
 
+**Epic 3: Gesture Control System** (In Progress)
+- Story 3.1: MediaPipe Hand Detection Setup ✅ (2025-11-15)
+  - Files: src/vision/hand_detector.py, src/config/hand_detection.yaml
+  - Tests: 24 passing (15 unit + 9 integration)
+
 ---
 
 _Last Updated: 2025-11-15_
-_Status Version: 1.5_
-_Total Stories Planned: 6 (Epic 1 + Epic 2)_
-_Total Stories Completed: 6/16 (38% complete)_
+_Status Version: 1.6_
+_Total Stories Planned: 10 (Epic 1 + Epic 2 + Epic 3 partial)_
+_Total Stories Completed: 7/16 (44% complete)_
 _Epic 1 Progress: 3/3 stories (100% - COMPLETE)_
 _Epic 2 Progress: 3/3 stories (100% - COMPLETE)_
-_Next Milestone: Plan Epic 3 (Gesture Control System)_
+_Epic 3 Progress: 1/4 stories (25% - IN PROGRESS)_
+_Next Milestone: Develop Story 3.2 (Three-Gesture Recognition)_
