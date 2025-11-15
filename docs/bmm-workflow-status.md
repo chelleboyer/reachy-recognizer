@@ -160,7 +160,7 @@ NEXT_AGENT: dev
 - [Epic 3 Planning Document](./epic-3-gesture-control-plan.md) ✅
 - [Story 3.1: MediaPipe Hand Detection Setup](./stories/story-3.1-hand-detection.md) (3 pts) - ✅ COMPLETE (2025-11-15)
 - [Story 3.2: Three-Gesture Recognition](./stories/story-3.2-three-gesture-recognition.md) (13 pts) - ✅ COMPLETE (2025-11-15)
-- Story 3.3: Gesture-to-Command Mapping (5 pts) - Not started
+- [Story 3.3: Gesture-to-Command Mapping](./stories/story-3.3-gesture-command-mapping.md) (5 pts) - Ready for Development
 - Story 3.4: Visual Feedback & UI Integration (5 pts) - Not started
 
 **Implementation Summary:**
