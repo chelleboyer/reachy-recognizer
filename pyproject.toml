@@ -33,3 +33,21 @@ reachy_recognizer = "main:main"
 [tool.uv.sources]
 reachy-mini-dances-library = { git = "https://github.com/pollen-robotics/reachy_mini_dances_library" }
 reachy-mini-toolbox = { git = "https://github.com/pollen-robotics/reachy_mini_toolbox" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--strict-markers",
+    "--tb=short",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
+

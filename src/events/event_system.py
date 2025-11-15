@@ -36,6 +36,7 @@ class EventType(Enum):
     PERSON_UNKNOWN = "person_unknown"        # Unknown person detected
     PERSON_DEPARTED = "person_departed"      # Person left frame
     NO_FACES = "no_faces"                    # No faces in frame
+    GESTURE_DETECTED = "gesture_detected"    # Hand gesture detected (Story 3.3)
 
 
 @dataclass
@@ -371,6 +372,34 @@ class EventManager:
                     logger.debug(f"Removed callback {callback_id}")
                     return True
         return False
+    
+    def emit(self, event_type: EventType, event_data: Any):
+        """
+        Manually emit an event to all registered callbacks.
+        
+        This is a generic method for components like GestureCoordinator
+        that need to emit custom events through the event system.
+        
+        Args:
+            event_type: Type of event to emit (must exist in EventType enum)
+            event_data: Event data object to pass to callbacks
+            
+        Example:
+            >>> gesture_event = GestureEvent(...)
+            >>> event_manager.emit(EventType.GESTURE_DETECTED, gesture_event)
+        """
+        # Add to history if it's a RecognitionEvent
+        if isinstance(event_data, RecognitionEvent):
+            self._add_to_history(event_data)
+        
+        # Trigger callbacks for this event type
+        for callback_id, callback_fn in self.callbacks[event_type]:
+            try:
+                callback_fn(event_data)
+            except Exception as e:
+                logger.error(f"Callback {callback_id} failed: {e}")
+        
+        logger.debug(f"Emitted {event_type.value} event")
     
     def get_recent_events(self, count: Optional[int] = None) -> List[RecognitionEvent]:
         """

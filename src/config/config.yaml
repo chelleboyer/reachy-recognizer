@@ -99,6 +99,38 @@ behaviors:
     yaw_range: [-10, 10]
 
 # ============================================================================
+# Gesture Control Configuration (Story 3.3)
+# ============================================================================
+gesture_control:
+  # Enable/disable individual gesture commands
+  commands:
+    approve:
+      enabled: true
+      audio_confirmation: true  # Play audio feedback for this command
+    skip:
+      enabled: true
+      audio_confirmation: true
+    pause:
+      enabled: true
+      audio_confirmation: false  # Silent for pause
+  
+  # Duplicate gesture prevention window (seconds)
+  # Same gesture from same hand won't trigger command within this window
+  duplicate_window_seconds: 3.0
+  
+  # Target feedback latency (milliseconds)
+  # How quickly visual/audio feedback should be presented
+  target_latency_ms: 200
+  
+  # Hand tracking confidence threshold (0.0-1.0)
+  # Lower = more strict hand detection
+  hand_confidence_threshold: 0.7
+  
+  # Gesture recognition confidence threshold (0.0-1.0)
+  # Lower = more strict gesture matching
+  gesture_confidence_threshold: 0.75
+
+# ============================================================================
 # Text-to-Speech Configuration
 # ============================================================================
 tts:
