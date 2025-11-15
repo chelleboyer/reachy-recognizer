@@ -1,0 +1,162 @@
+# Gesture Recognition Configuration
+# Story 3.2: Three-Gesture Recognition
+#
+# Configuration for detecting thumbs up, wave, and palm stop gestures
+# Performance targets: <0.5s recognition time, <5% false positive rate, 95%+ accuracy
+
+# Gesture Detection Thresholds
+gestures:
+  # Thumbs Up Gesture
+  thumbs_up:
+    # Minimum confidence score to register gesture (0.0-1.0)
+    min_confidence: 0.75
+    
+    # Thumb extension: thumb tip must be this far above other fingertips (normalized units)
+    thumb_extension_threshold: 0.15
+    
+    # Thumb angle: maximum deviation from vertical (degrees)
+    max_thumb_angle: 30
+    
+    # Other fingers: maximum extension allowed (normalized units)
+    max_finger_extension: 0.2
+    
+    # Minimum ratio of thumb length to index finger length
+    min_thumb_ratio: 0.8
+  
+  # Wave Gesture
+  wave:
+    # Minimum confidence score to register gesture (0.0-1.0)
+    min_confidence: 0.70
+    
+    # Minimum hand movement amplitude (normalized units)
+    min_movement_amplitude: 0.1
+    
+    # Maximum hand movement amplitude (normalized units)
+    max_movement_amplitude: 0.4
+    
+    # Oscillation detection: minimum number of direction changes
+    min_direction_changes: 2
+    
+    # Time window for detecting wave motion (seconds)
+    detection_window: 1.5
+    
+    # Minimum frequency of hand movement (Hz)
+    min_frequency: 1.0
+    
+    # Maximum frequency of hand movement (Hz)
+    max_frequency: 4.0
+    
+    # Fingers must be extended for wave
+    min_finger_extension: 0.6
+  
+  # Palm Stop Gesture
+  palm_stop:
+    # Minimum confidence score to register gesture (0.0-1.0)
+    min_confidence: 0.80
+    
+    # All fingers must be extended this much (normalized units)
+    min_all_fingers_extension: 0.7
+    
+    # Maximum angle deviation from palm facing camera (degrees)
+    max_palm_angle: 25
+    
+    # Minimum finger spread (normalized units)
+    min_finger_spread: 0.15
+    
+    # Fingers pointing upward: maximum angle from vertical (degrees)
+    max_finger_vertical_angle: 30
+    
+    # Palm must be relatively stable (max movement in normalized units)
+    max_palm_movement: 0.05
+
+# Temporal Validation Settings
+temporal:
+  # Hold time: minimum duration gesture must be held (seconds)
+  # Prevents accidental/transient detections
+  hold_time: 0.5
+  
+  # Smoothing window: number of frames to average for confidence
+  smoothing_window: 5
+  
+  # Confidence decay: how quickly confidence drops when gesture not detected
+  # Higher = faster decay (0.0-1.0)
+  confidence_decay: 0.3
+  
+  # Minimum frames gesture must be detected in smoothing window
+  min_detection_frames: 3
+  
+  # Cooldown time after gesture recognized (seconds)
+  # Prevents rapid re-triggering
+  gesture_cooldown: 1.0
+
+# Distance Estimation Settings
+distance:
+  # Enable distance estimation using hand size
+  enable_estimation: true
+  
+  # Reference hand span at 1 meter (meters, world coordinates)
+  # Average adult hand span thumb-to-pinky: ~0.20m
+  reference_hand_span: 0.20
+  
+  # Minimum detectable distance (meters)
+  min_distance: 1.0
+  
+  # Maximum detectable distance (meters)
+  max_distance: 3.0
+  
+  # Apply smoothing to distance estimates
+  enable_distance_smoothing: true
+  
+  # Distance smoothing window (frames)
+  distance_smoothing_window: 3
+
+# False Positive Prevention
+false_positive_prevention:
+  # Reject gestures with confidence below this threshold
+  absolute_min_confidence: 0.60
+  
+  # Require multiple landmarks to be tracked
+  min_landmarks_tracked: 18  # out of 21
+  
+  # Maximum hand tracking confidence required
+  min_hand_confidence: 0.70
+  
+  # Reject gestures when hand is moving too fast (normalized units/second)
+  max_hand_velocity: 2.0
+  
+  # Reject gestures when hand is too close to frame edge (normalized units)
+  edge_margin: 0.1
+
+# Performance Settings
+performance:
+  # Enable performance logging
+  enable_logging: true
+  
+  # Log gesture recognition statistics every N frames
+  stats_log_interval: 100
+  
+  # Enable detailed debug logging
+  debug_logging: false
+  
+  # Maximum time for recognize() method (milliseconds)
+  max_recognition_time: 50
+
+# Debug Visualization
+debug:
+  # Enable debug visualization
+  enable_visualization: false
+  
+  # Draw hand landmarks
+  draw_landmarks: true
+  
+  # Draw gesture-specific annotations
+  draw_gesture_indicators: true
+  
+  # Annotate with confidence scores
+  show_confidence: true
+  
+  # Save debug frames to disk
+  save_debug_frames: false
+  
+  # Debug output directory
+  debug_output_dir: "cache/gesture_debug"

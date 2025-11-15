@@ -12,7 +12,7 @@ WORKFLOW_PATH: greenfield-level-2.yaml
 ## Current State
 
 CURRENT_PHASE: 2-Development
-CURRENT_WORKFLOW: Epic 3 Story 3.1 Complete - Continue Development
+CURRENT_WORKFLOW: Epic 3 Story 3.2 Complete - Continue Development
 CURRENT_AGENT: dev
 PHASE_1_COMPLETE: true
 PHASE_2_COMPLETE: false (Epic 1 complete, Epic 2 complete, Epic 3 in progress, Epic 4 pending)
@@ -21,8 +21,8 @@ PHASE_4_COMPLETE: false
 
 ## Next Action
 
-NEXT_ACTION: Develop Story 3.2 (Three-Gesture Recognition)
-NEXT_COMMAND: *develop (Story 3.2)
+NEXT_ACTION: Develop Story 3.3 (Gesture-to-Command Mapping)
+NEXT_COMMAND: *develop (Story 3.3)
 NEXT_AGENT: dev
 
 ## Project Overview
@@ -159,7 +159,7 @@ NEXT_AGENT: dev
 **Story Files Created:**
 - [Epic 3 Planning Document](./epic-3-gesture-control-plan.md) ✅
 - [Story 3.1: MediaPipe Hand Detection Setup](./story-3.1-hand-detection.md) (3 pts) - ✅ COMPLETE (2025-11-15)
-- Story 3.2: Three-Gesture Recognition (13 pts) - Not started
+- Story 3.2: Three-Gesture Recognition (13 pts) - ✅ COMPLETE (2025-11-15)
 - Story 3.3: Gesture-to-Command Mapping (5 pts) - Not started
 - Story 3.4: Visual Feedback & UI Integration (5 pts) - Not started
 
@@ -175,16 +175,26 @@ NEXT_AGENT: dev
 - 24/24 tests passing (15 unit + 9 integration)
 - Context manager support for resource cleanup
 
+**Story 3.2** - Three-gesture recognition system:
+- GestureRecognizer class with GestureType enum (THUMBS_UP, WAVE, PALM_STOP, UNKNOWN)
+- Three detection algorithms: thumbs up (thumb extension + angle), wave (oscillating wrist), palm stop (extended fingers + palm facing)
+- Temporal validation: 0.5s hold time, 5-frame smoothing, 1.0s cooldown between gestures
+- Distance estimation: Hand span-based (thumb-to-pinky), range 1.0-3.0m
+- False positive prevention: Confidence thresholds, edge margin checks, landmark quality validation
+- Configuration: gesture_recognition.yaml with gesture thresholds, temporal settings, distance estimation, performance tuning
+- 48/48 tests passing (30 unit + 18 integration)
+- Performance: <50ms recognition time target met
+
 **Epic Metrics (so far):**
-- **Story Points Complete**: 3/26 (12%)
-- **Total Tests**: 24 passing
-- **Lines of Code**: ~500 (implementation + tests + config)
-- **Configuration Files**: 1 (hand_detection.yaml)
-- **Dependencies**: mediapipe>=0.10.8
+- **Story Points Complete**: 16/26 (62%)
+- **Total Tests**: 72 passing (24 + 48)
+- **Lines of Code**: ~2,000 (implementation + tests + config)
+- **Configuration Files**: 2 (hand_detection.yaml, gesture_recognition.yaml)
+- **Dependencies**: mediapipe>=0.10.8, numpy, opencv-python
 
-**Next:** Story 3.2 (Three-Gesture Recognition - thumbs up, wave, palm stop)
+**Next:** Story 3.3 (Gesture-to-Command Mapping)
 
-**Progress:** ✅ 1/4 stories complete (3/26 story points = 12%)
+**Progress:** ✅ 2/4 stories complete (16/26 story points = 62%)
 
 ### Epic 4: Integration & Testing (Week 4)
 **Status:** Not yet planned
@@ -278,14 +288,18 @@ NEXT_AGENT: dev
 - Story 3.1: MediaPipe Hand Detection Setup ✅ (2025-11-15)
   - Files: src/vision/hand_detector.py, src/config/hand_detection.yaml
   - Tests: 24 passing (15 unit + 9 integration)
+  
+- Story 3.2: Three-Gesture Recognition ✅ (2025-11-15)
+  - Files: src/vision/gesture_recognizer.py, src/config/gesture_recognition.yaml
+  - Tests: 48 passing (30 unit + 18 integration)
 
 ---
 
 _Last Updated: 2025-11-15_
 _Status Version: 1.6_
 _Total Stories Planned: 10 (Epic 1 + Epic 2 + Epic 3 partial)_
-_Total Stories Completed: 7/16 (44% complete)_
+_Total Stories Completed: 8/16 (50% complete)_
 _Epic 1 Progress: 3/3 stories (100% - COMPLETE)_
 _Epic 2 Progress: 3/3 stories (100% - COMPLETE)_
-_Epic 3 Progress: 1/4 stories (25% - IN PROGRESS)_
-_Next Milestone: Develop Story 3.2 (Three-Gesture Recognition)_
+_Epic 3 Progress: 2/4 stories (50% - IN PROGRESS)_
+_Next Milestone: Develop Story 3.3 (Gesture-to-Command Mapping)_
