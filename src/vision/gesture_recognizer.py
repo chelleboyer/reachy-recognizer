@@ -302,7 +302,7 @@ class GestureRecognizer:
             hand_id=hand_id,
             handedness=hand_landmarks.handedness,
             timestamp=current_time,
-            distance_estimate=distance,
+            distance_estimate=float(distance) if distance is not None else None,
             hold_duration=hold_duration,
             is_confirmed=is_confirmed
         )
@@ -659,7 +659,7 @@ class GestureRecognizer:
             else:
                 self.last_gesture_time[hand_id] = current_time
         
-        return most_common, avg_confidence, hold_duration, is_confirmed
+        return most_common, float(avg_confidence), hold_duration, is_confirmed
     
     def _create_unknown_result(self, hand: HandLandmarks) -> GestureResult:
         """Create a GestureResult for unknown/no gesture.

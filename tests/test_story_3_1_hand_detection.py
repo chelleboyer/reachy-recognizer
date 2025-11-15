@@ -278,7 +278,7 @@ class TestHandDetection:
         detector = HandDetector(config_path)
         
         with pytest.raises(ValueError, match="Invalid frame"):
-            detector.detect(None)
+            detector.detect(None)  # type: ignore
         
         with pytest.raises(ValueError, match="Invalid frame"):
             detector.detect(np.array([]))
