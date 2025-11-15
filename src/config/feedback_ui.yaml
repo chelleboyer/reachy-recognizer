@@ -1,0 +1,34 @@
+feedback_ui:
+  # Animation settings
+  animation:
+    total_duration_seconds: 1.0   # Total animation duration
+    fade_in_duration: 0.2         # Fade-in phase duration (seconds)
+    pulse_duration: 0.6           # Pulse phase duration (seconds)
+    fade_out_duration: 0.2        # Fade-out phase duration (seconds)
+  
+  # Visual settings
+  icons:
+    thumbs_up: "👍"               # Thumbs up emoji
+    wave: "👋"                    # Waving hand emoji
+    palm_stop: "✋"                # Raised hand emoji
+    size_pixels: 200              # Base icon size in pixels
+    scale_pulse_max: 1.2          # Maximum scale during pulse (1.0 = no scaling)
+  
+  # Display position
+  position:
+    x: "center"                   # Horizontal position: "center", "left", "right", or pixel value
+    y: "center"                   # Vertical position: "center", "top", "bottom", or pixel value
+    offset_x: 0                   # Horizontal offset from position (pixels)
+    offset_y: -50                 # Vertical offset from position (negative = up)
+  
+  # Colors (RGBA format: [R, G, B, Alpha])
+  colors:
+    icon_color: [255, 255, 255, 255]       # White icon with full opacity
+    background_color: [0, 0, 0, 128]       # Semi-transparent black background
+    background_enabled: true               # Whether to draw circle behind icon
+    background_radius: 120                 # Background circle radius in pixels
+  
+  # Performance settings
+  target_latency_ms: 200          # Maximum acceptable latency from gesture to display
+  frame_rate: 30                  # Animation frames per second
+  max_queue_size: 3               # Maximum number of queued animations
