@@ -371,6 +371,12 @@ def main():
     parser.add_argument('--headless', action='store_true', help='No display window')
     args = parser.parse_args()
     
+    # Configure Qt platform based on headless flag
+    import os
+    import sys
+    if args.headless and sys.platform.startswith("linux"):
+        os.environ['QT_QPA_PLATFORM'] = 'offscreen'
+    
     print("=" * 70)
     print("🤖 Reachy Conversational AI Demo (POC)")
     print("=" * 70)
