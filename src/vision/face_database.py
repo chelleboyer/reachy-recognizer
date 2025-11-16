@@ -301,8 +301,9 @@ class FaceDatabase:
                 self.database.update(loaded_faces)
                 logger.info(f"✓ Merged {len(loaded_faces)} faces from {filepath}")
             else:
-                # Replace existing database
-                self.database = loaded_faces
+                # Replace existing database (update in-place to preserve references)
+                self.database.clear()
+                self.database.update(loaded_faces)
                 self.created_at = data.get("created_at", datetime.now().isoformat())
                 logger.info(f"✓ Loaded {len(loaded_faces)} faces from {filepath}")
             

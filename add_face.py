@@ -8,6 +8,8 @@ import sys
 import time
 import platform
 from pathlib import Path
+from typing import cast
+import numpy as np
 
 # Fix OpenCV platform issues based on OS
 if platform.system() == "Windows":
@@ -110,16 +112,18 @@ def capture_and_add_face(name: str, use_reachy: bool = False, reachy_remote: boo
     while not captured:
         # Get frame from appropriate source
         if reachy_camera_ready and reachy:
-            frame = reachy.media.get_frame()
-            if frame is None:
+            frame_data = reachy.media.get_frame()
+            if frame_data is None:
                 time.sleep(0.033)  # ~30 FPS
                 continue
-            # Reachy returns BGR format directly
+            # Reachy returns BGR format directly - ensure it's an ndarray
+            frame = cast(np.ndarray, np.asarray(frame_data, dtype=np.uint8))
         else:
             if camera is not None:
-                ret, frame = camera.read()
+                ret, frame_data = camera.read()
                 if not ret:
                     continue
+                frame = cast(np.ndarray, frame_data)
             else:
                 continue
         
