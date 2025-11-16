@@ -186,11 +186,10 @@ def main():
             # Process frame
             results = pipeline.process_frame(frame)
             
-            # Log detection results
+            # Log detection results (only at debug level to reduce spam)
             if results:
                 for name, confidence, (top, right, bottom, left) in results:
-                    print(f"👤 Detected: {name} (confidence: {confidence:.2%})")
-                    logger.info(f"Face detected: {name} with {confidence:.2%} confidence")
+                    logger.debug(f"Face detected: {name} with {confidence:.2%} confidence")
             
             # Check for events
             if pipeline.event_manager:
