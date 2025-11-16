@@ -188,13 +188,15 @@ class GreetingCoordinator:
         Sequence (AC: 2):
         1. Start gesture (greeting_wave)
         2. Wait gesture_speech_delay seconds
-        3. Start speech (overlaps with gesture)
+        3. Start speech (overlaps with gesture) - runs in thread
         4. Mark person as greeted
         5. Track performance metrics
         
         Args:
             event: Recognition event to respond to
         """
+        import threading
+        
         start_time = time.time()
         
         logger.info(f"Greeting {event.person_name} (confidence: {event.confidence:.2f})")
@@ -205,23 +207,26 @@ class GreetingCoordinator:
         # Track initial response latency (AC: 4)
         initial_latency = (time.time() - start_time) * 1000  # ms
         
-        # 2. Wait before speech (gesture starts first) (AC: 3)
-        time.sleep(self.gesture_speech_delay)
+        # 2. Start speech in background thread after delay (AC: 3)
+        def delayed_speech():
+            time.sleep(self.gesture_speech_delay)
+            
+            if self.use_enhanced_voice and self.adaptive_tts and self.greeting_selector:
+                # Use new enhanced voice system
+                self._speak_enhanced(event.person_name, GreetingType.RECOGNIZED)
+            elif self.tts_manager:
+                # Fallback to legacy TTS
+                self.tts_manager.speak_greeting(
+                    OldGreetingType.RECOGNIZED,
+                    event.person_name
+                )
+            else:
+                logger.warning("No TTS system available!")
         
-        # 3. Start speech (during gesture) (AC: 3)
-        if self.use_enhanced_voice and self.adaptive_tts and self.greeting_selector:
-            # Use new enhanced voice system
-            self._speak_enhanced(event.person_name, GreetingType.RECOGNIZED)
-        elif self.tts_manager:
-            # Fallback to legacy TTS
-            self.tts_manager.speak_greeting(
-                OldGreetingType.RECOGNIZED,
-                event.person_name
-            )
-        else:
-            logger.warning("No TTS system available!")
+        speech_thread = threading.Thread(target=delayed_speech, daemon=True)
+        speech_thread.start()
         
-        # 4. Mark as greeted (AC: 6)
+        # 3. Mark as greeted immediately (AC: 6)
         self.greeted_persons.add(event.person_name)
         self.total_greetings += 1
         
