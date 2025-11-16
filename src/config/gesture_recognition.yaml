@@ -76,8 +76,8 @@ gestures:
 # Temporal Validation Settings
 temporal:
   # Hold time: minimum duration gesture must be held (seconds)
-  # Prevents accidental/transient detections
-  hold_time: 0.5
+  # Reduced to 0.2s for faster response
+  hold_time: 0.2
   
   # Smoothing window: number of frames to average for confidence
   # Reduced to 3 for faster response on Pi5
@@ -88,6 +88,7 @@ temporal:
   confidence_decay: 0.3
   
   # Minimum frames gesture must be detected in smoothing window
+  # Reduced to 2 for faster confirmation
   min_detection_frames: 2
   
   # Cooldown time after gesture recognized (seconds)

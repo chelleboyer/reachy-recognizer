@@ -193,6 +193,10 @@ class GestureRecognizer:
         # Track when each hand last had a confirmed gesture
         self.last_gesture_time: Dict[int, float] = {}
         
+        # Track when each gesture type started for each hand
+        # Key: (hand_id, gesture_type), Value: start_timestamp
+        self.gesture_start_time: Dict[Tuple[int, GestureType], float] = {}
+        
         # Track wrist positions for wave detection (per hand_id)
         # Each entry: (x, y, timestamp)
         self.wrist_history: Dict[int, Deque[Tuple[float, float, float]]] = {}
@@ -606,15 +610,23 @@ class GestureRecognizer:
         # Calculate average confidence
         avg_confidence = np.mean(gesture_confidences[most_common])
         
-        # Calculate hold duration
-        oldest_detection = None
-        for gesture, _, timestamp in history:
-            if gesture == most_common:
-                if oldest_detection is None or timestamp < oldest_detection:
-                    oldest_detection = timestamp
-        
+        # Calculate hold duration using gesture start time
+        gesture_key = (hand_id, most_common)
         current_time = time.time()
-        hold_duration = current_time - oldest_detection if oldest_detection else 0.0
+        
+        # If this gesture wasn't being tracked, start tracking it now
+        if gesture_key not in self.gesture_start_time:
+            self.gesture_start_time[gesture_key] = current_time
+            hold_duration = 0.0
+        else:
+            # Calculate how long we've been seeing this gesture
+            hold_duration = current_time - self.gesture_start_time[gesture_key]
+        
+        # Clean up start times for gestures not in current history
+        active_gestures = {(hand_id, g) for g, _, _ in history}
+        stale_keys = [k for k in list(self.gesture_start_time.keys()) if k[0] == hand_id and k not in active_gestures]
+        for key in stale_keys:
+            del self.gesture_start_time[key]
         
         # Check if gesture is confirmed (held long enough)
         is_confirmed = hold_duration >= self.hold_time
