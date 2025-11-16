@@ -116,7 +116,7 @@ def main():
         pipeline = RecognitionPipeline(
             recognition_threshold=config.face_recognition.threshold,
             enable_events=True,
-            camera=dummy_camera
+            camera=dummy_camera  # type: ignore
         )
         
         # Load face database
