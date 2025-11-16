@@ -97,21 +97,31 @@ def main():
         idle_manager.start()
         logger.info("✓ Idle manager started")
         
-        # Recognition pipeline
+        # Use Reachy's camera if robot is enabled (instead of webcam)
+        reachy_camera = None
+        use_reachy_cam = config.behaviors.enable_robot and behavior_manager.reachy
+        
+        # Recognition pipeline (don't init webcam if using Reachy camera)
+        from src.vision.camera_interface import CameraInterface
+        dummy_camera = None
+        if not use_reachy_cam:
+            dummy_camera = CameraInterface()
+        
         pipeline = RecognitionPipeline(
             recognition_threshold=config.face_recognition.threshold,
-            enable_events=True
+            enable_events=True,
+            camera=dummy_camera
         )
         
         # Load face database
         pipeline.load_database("data/faces.json")
         logger.info("✓ Recognition pipeline initialized")
         
-        # Use Reachy's camera if robot is enabled (instead of webcam)
-        reachy_camera = None
-        if config.behaviors.enable_robot and behavior_manager.reachy:
+        if use_reachy_cam:
             reachy_camera = behavior_manager.reachy
             logger.info("✓ Using Reachy camera for recognition")
+        else:
+            logger.info("✓ Using webcam for recognition")
         
         # CRITICAL: Re-register coordinator with pipeline's event manager
         # The pipeline creates its own EventManager, so we need to use that one
@@ -131,7 +141,8 @@ def main():
     # Setup shutdown handler
     def shutdown_handler(signum, frame):
         print("\n\n🛑 Shutting down...")
-        pipeline.camera.release()
+        if pipeline.camera:
+            pipeline.camera.release()
         idle_manager.stop()
         print("✓ Goodbye!")
         sys.exit(0)
@@ -201,7 +212,7 @@ def main():
         return 1
     finally:
         # Cleanup
-        if not reachy_camera:
+        if pipeline.camera:
             pipeline.camera.release()
         idle_manager.stop()
         if config.system.debug_display:
