@@ -155,7 +155,11 @@ def main():
     
     if not use_reachy:
         print(f"📷 Using webcam (index {args.camera_index})")
-        camera = cv2.VideoCapture(args.camera_index)
+        # Use DirectShow backend on Windows for better compatibility
+        if sys.platform.startswith("win"):
+            camera = cv2.VideoCapture(args.camera_index, cv2.CAP_DSHOW)
+        else:
+            camera = cv2.VideoCapture(args.camera_index)
         if not camera.isOpened():
             print("✗ Failed to open camera")
             return 1
@@ -304,7 +308,7 @@ def main():
     print("📹 Starting gesture recognition...")
     print("=" * 70)
     print("👍 Show gestures to the camera:")
-    print("   - Thumbs Up → 'You got it boss!' + wave")
+    print("   - Thumbs Up → 'Thumbs Up!' + wave")
     print("   - Wave → 'Hello there!'")
     print("   - Palm Stop → 'Okay, I'll wait'")
     if not args.headless:
@@ -360,6 +364,26 @@ def main():
                 # Process frame through coordinator with timing
                 # This will detect hands, recognize gestures, and emit events
                 detect_start = time.time()
+                
+                # First detect hands
+                hands = detector.detect(frame)
+                if hands and args.benchmark:
+                    for hand in hands:
+                        # Recognize gesture (this initializes internal state)
+                        gesture_result = recognizer.recognize(hand)
+                        
+                        # Show result with debug info
+                        if gesture_result.gesture_type != GestureType.UNKNOWN:
+                            print(f"DEBUG: {gesture_result.gesture_type.value} "
+                                  f"conf={gesture_result.confidence:.2f} "
+                                  f"hold={gesture_result.hold_duration:.2f}s "
+                                  f"confirmed={gesture_result.is_confirmed}")
+                        else:
+                            print(f"DEBUG: No gesture detected (hand {hand.hand_id} {hand.handedness})")
+                else:
+                    hands = detector.detect(frame)
+                
+                # Now process through coordinator
                 gesture_events = coordinator.process_frame(frame)
                 detect_time = (time.time() - detect_start) * 1000  # ms
                 
