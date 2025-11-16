@@ -89,6 +89,7 @@ def capture_and_add_face(name: str, use_reachy: bool = False, reachy_remote: boo
             reachy = None
     
     # Open webcam if not using Reachy camera
+    camera = None
     if not reachy_camera_ready:
         camera_capture = cv2.VideoCapture(0)
         if not camera_capture.isOpened():
@@ -118,14 +119,16 @@ def capture_and_add_face(name: str, use_reachy: bool = False, reachy_remote: boo
                 continue
             # Reachy returns BGR format directly - ensure it's an ndarray
             frame = cast(np.ndarray, np.asarray(frame_data, dtype=np.uint8))
-        else:
-            if camera is not None:
-                ret, frame_data = camera.read()
-                if not ret:
-                    continue
-                frame = cast(np.ndarray, frame_data)
-            else:
+        elif camera is not None:
+            ret, frame_data = camera.read()
+            if not ret:
+                print("⚠️  Failed to read frame from camera")
+                time.sleep(0.1)
                 continue
+            frame = cast(np.ndarray, frame_data)
+        else:
+            print("❌ No camera available!")
+            return False
         
         # Detect faces
         faces = detector.detect_faces(frame)
