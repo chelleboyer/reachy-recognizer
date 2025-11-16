@@ -11,7 +11,7 @@ from pathlib import Path
 # Enable JSON logging for this test
 os.environ['REACHY_LOGGING_JSON_FORMAT'] = 'true'
 
-from src.logging import setup_logging
+from src.log_system import setup_logging
 
 def test_logging_integration():
     """Test logging with sample entries."""

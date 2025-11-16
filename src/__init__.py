@@ -14,5 +14,6 @@ __version__ = "1.0.0"
 __author__ = "Michelle"
 
 from .config.config_loader import load_config, get_config, Config
+from .log_system import setup_logging
 
-__all__ = ["load_config", "get_config", "Config"]
+__all__ = ["load_config", "get_config", "Config", "setup_logging"]
