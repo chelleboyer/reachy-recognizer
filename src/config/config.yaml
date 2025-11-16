@@ -73,7 +73,7 @@ events:
 # ============================================================================
 behaviors:
   # Enable real robot control (false = simulation mode)
-  enable_robot: true
+  enable_robot: false
   
   # Gesture-speech coordination delay (seconds)
   gesture_speech_delay: 0.3
