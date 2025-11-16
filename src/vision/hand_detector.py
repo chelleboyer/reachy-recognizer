@@ -184,6 +184,11 @@ class HandDetector:
         self.total_latency_ms = 0.0
         self.start_time = time.time()
         
+        # Initialize landmark smoothing
+        self.enable_smoothing = perf_config.get('enable_smoothing', True)
+        self.smoothing_window = perf_config.get('smoothing_window', 3)
+        self.landmark_history: Dict[int, List[List[Tuple[float, float, float]]]] = {}
+        
         logger.info(f"HandDetector initialized with config from {config_path}")
         logger.info(f"Target FPS: {self.target_fps}, Max latency: {self.max_latency_ms}ms")
     
@@ -208,8 +213,9 @@ class HandDetector:
         
         start_time = time.time()
         
-        # Convert BGR to RGB for MediaPipe
+        # Convert BGR to RGB for MediaPipe (with writeable flag for speed)
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        frame_rgb.flags.writeable = False
         
         # Process frame with MediaPipe
         results = self.hands.process(frame_rgb)
@@ -239,10 +245,16 @@ class HandDetector:
                 hand_confidence = handedness.classification[0].score
                 
                 # Extract normalized landmarks
-                landmarks = [
+                raw_landmarks = [
                     (lm.x, lm.y, lm.z)
                     for lm in hand_landmarks.landmark
                 ]
+                
+                # Apply smoothing if enabled
+                if self.enable_smoothing:
+                    landmarks = self._smooth_landmarks(hand_id, raw_landmarks)
+                else:
+                    landmarks = raw_landmarks
                 
                 # Extract world landmarks if available
                 world_landmarks = []
@@ -313,6 +325,53 @@ class HandDetector:
         self.start_time = time.time()
         
         logger.info("Detection statistics reset")
+    
+    def _smooth_landmarks(
+        self, 
+        hand_id: int, 
+        landmarks: List[Tuple[float, float, float]]
+    ) -> List[Tuple[float, float, float]]:
+        """Apply temporal smoothing to landmark positions.
+        
+        Averages landmark positions over the last N frames to reduce jitter
+        and provide smoother gesture recognition.
+        
+        Args:
+            hand_id: Unique identifier for this hand
+            landmarks: Current frame's raw landmarks
+        
+        Returns:
+            Smoothed landmarks averaged over smoothing window
+        """
+        # Initialize history for this hand if needed
+        if hand_id not in self.landmark_history:
+            self.landmark_history[hand_id] = []
+        
+        # Add current landmarks to history
+        self.landmark_history[hand_id].append(landmarks)
+        
+        # Keep only last N frames
+        if len(self.landmark_history[hand_id]) > self.smoothing_window:
+            self.landmark_history[hand_id].pop(0)
+        
+        # Average landmarks across history
+        smoothed = []
+        for i in range(len(landmarks)):
+            x_sum = y_sum = z_sum = 0.0
+            count = len(self.landmark_history[hand_id])
+            
+            for frame_landmarks in self.landmark_history[hand_id]:
+                x_sum += frame_landmarks[i][0]
+                y_sum += frame_landmarks[i][1]
+                z_sum += frame_landmarks[i][2]
+            
+            smoothed.append((
+                x_sum / count,
+                y_sum / count,
+                z_sum / count
+            ))
+        
+        return smoothed
     
     def _update_fps(self) -> None:
         """Update FPS calculation based on recent frames."""

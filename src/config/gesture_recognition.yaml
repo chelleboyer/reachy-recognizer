@@ -145,7 +145,8 @@ performance:
   debug_logging: false
   
   # Maximum time for recognize() method (milliseconds)
-  max_recognition_time: 50
+  # Optimized for 30 FPS target
+  max_recognition_time: 33
 
 # Debug Visualization
 debug:

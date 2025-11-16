@@ -13,13 +13,13 @@ mediapipe:
   
   # Minimum confidence for hand detection (0.0-1.0)
   # Lower values = more detections but more false positives
-  # Default: 0.5 for reliable detection
-  min_detection_confidence: 0.5
+  # Default: 0.3 for fast detection (optimized for speed)
+  min_detection_confidence: 0.3
   
   # Minimum confidence for landmark tracking (0.0-1.0)
   # Once detected, tracks landmarks with this threshold
-  # Default: 0.5 for stable tracking
-  min_tracking_confidence: 0.5
+  # Default: 0.3 for fast tracking (optimized for speed)
+  min_tracking_confidence: 0.3
   
   # Maximum number of hands to detect (1-2)
   # Default: 2 to support two-handed gestures
@@ -34,13 +34,23 @@ mediapipe:
 performance:
   # Target frames per second (10-30)
   # Must be >= 10 FPS for responsive interaction
-  # Default: 20 FPS for Pi5 with model_complexity=0
-  target_fps: 20
+  # Default: 30 FPS for Pi5 with model_complexity=0 (speed optimized)
+  target_fps: 30
   
   # Maximum latency in milliseconds (0-100)
   # Maximum acceptable delay for hand detection
-  # Default: 50ms (~20 FPS equivalent)
-  max_latency_ms: 50
+  # Default: 33ms (~30 FPS equivalent)
+  max_latency_ms: 33
+  
+  # Enable landmark smoothing (true/false)
+  # Smooths landmark positions over time for less jitter
+  # Default: true for smoother gesture recognition
+  enable_smoothing: true
+  
+  # Smoothing window size (frames)
+  # Number of frames to average for smoothing
+  # Default: 3 for responsive smoothing
+  smoothing_window: 3
   
   # Enable performance logging (true/false)
   # Logs FPS, detection counts, and latency metrics
