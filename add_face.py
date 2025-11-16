@@ -30,7 +30,6 @@ from src.vision.face_encoder import FaceEncoder
 # Import Reachy components (optional)
 try:
     from reachy_mini import ReachyMini
-    from reachy_mini_conversation_app.camera_worker import CameraWorker  # type: ignore
     REACHY_AVAILABLE = True
 except ImportError:
     REACHY_AVAILABLE = False
@@ -56,7 +55,6 @@ def capture_and_add_face(name: str, use_reachy: bool = False, reachy_remote: boo
     
     # Initialize camera
     reachy = None
-    camera_worker = None
     camera = None
     reachy_camera_ready = False
     
@@ -68,21 +66,13 @@ def capture_and_add_face(name: str, use_reachy: bool = False, reachy_remote: boo
             else:
                 print("Connecting to Reachy...")
                 reachy = ReachyMini()
-            camera_worker = CameraWorker(reachy, head_tracker=None)
-            camera_worker.start()
             
-            # Wait for first frame
-            print("Waiting for Reachy camera...")
-            for _ in range(50):  # Wait up to 5 seconds
-                frame = camera_worker.get_latest_frame()
-                if frame is not None:
-                    break
-                time.sleep(0.1)
+            # Test camera
+            print("Testing Reachy camera...")
+            test_frame = reachy.media.get_frame()
             
-            if frame is None:
+            if test_frame is None:
                 print("❌ Error: Reachy camera not producing frames")
-                if camera_worker:
-                    camera_worker.stop()
                 if reachy:
                     reachy.client.disconnect()
                 print("   Falling back to webcam...")
@@ -92,11 +82,8 @@ def capture_and_add_face(name: str, use_reachy: bool = False, reachy_remote: boo
         except Exception as e:
             print(f"❌ Error connecting to Reachy: {e}")
             print("   Falling back to webcam...")
-            if camera_worker:
-                camera_worker.stop()
             if reachy:
                 reachy.client.disconnect()
-            camera_worker = None
             reachy = None
     
     # Open webcam if not using Reachy camera
@@ -122,13 +109,12 @@ def capture_and_add_face(name: str, use_reachy: bool = False, reachy_remote: boo
     
     while not captured:
         # Get frame from appropriate source
-        if reachy_camera_ready and camera_worker:
-            frame = camera_worker.get_latest_frame()
+        if reachy_camera_ready and reachy:
+            frame = reachy.media.get_frame()
             if frame is None:
                 time.sleep(0.033)  # ~30 FPS
                 continue
-            # Convert RGB back to BGR for OpenCV display
-            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+            # Reachy returns BGR format directly
         else:
             if camera is not None:
                 ret, frame = camera.read()
@@ -167,8 +153,6 @@ def capture_and_add_face(name: str, use_reachy: bool = False, reachy_remote: boo
             print("\n❌ Cancelled by user")
             if camera is not None:
                 camera.release()
-            if camera_worker is not None:
-                camera_worker.stop()
             if reachy is not None:
                 reachy.client.disconnect()
             cv2.destroyAllWindows()
@@ -200,8 +184,6 @@ def capture_and_add_face(name: str, use_reachy: bool = False, reachy_remote: boo
     # Cleanup
     if camera is not None:
         camera.release()  # type: ignore
-    if camera_worker is not None:
-        camera_worker.stop()
     if reachy is not None:
         reachy.client.disconnect()
     cv2.destroyAllWindows()
