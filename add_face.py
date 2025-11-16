@@ -40,6 +40,7 @@ def capture_and_add_face(name: str, use_reachy: bool = False):
     reachy = None
     camera_worker = None
     camera = None
+    reachy_camera_ready = False
     
     if use_reachy and REACHY_AVAILABLE:
         try:
@@ -62,20 +63,22 @@ def capture_and_add_face(name: str, use_reachy: bool = False):
                     camera_worker.stop()
                 if reachy:
                     reachy.client.disconnect()
-                return False
-            
-            print("✓ Reachy camera ready!")
+                print("   Falling back to webcam...")
+            else:
+                print("✓ Reachy camera ready!")
+                reachy_camera_ready = True
         except Exception as e:
             print(f"❌ Error connecting to Reachy: {e}")
             print("   Falling back to webcam...")
-            use_reachy = False
             if camera_worker:
                 camera_worker.stop()
             if reachy:
                 reachy.client.disconnect()
+            camera_worker = None
+            reachy = None
     
-    if not use_reachy or not REACHY_AVAILABLE:
-        # Use webcam
+    # Open webcam if not using Reachy camera
+    if not reachy_camera_ready:
         camera_capture = cv2.VideoCapture(0)
         if not camera_capture.isOpened():
             print("❌ Error: Could not open webcam")
@@ -93,7 +96,7 @@ def capture_and_add_face(name: str, use_reachy: bool = False):
     
     while not captured:
         # Get frame from appropriate source
-        if use_reachy and camera_worker:
+        if reachy_camera_ready and camera_worker:
             frame = camera_worker.get_latest_frame()
             if frame is None:
                 time.sleep(0.033)  # ~30 FPS
