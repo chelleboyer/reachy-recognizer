@@ -57,6 +57,7 @@ from src.voice.adaptive_tts_manager import AdaptiveTTSManager
 from src.voice.greeting_selector import GreetingTemplate
 from src.behaviors.behavior_module import BehaviorManager, greeting_wave
 import asyncio
+import threading
 
 
 def is_raspberry_pi() -> bool:
@@ -220,46 +221,51 @@ def main():
                 except Exception as e:
                     print(f"   ⚠️  Wave failed: {e}")
             
-            # Speak response
+            # Speak response (in background thread to avoid freezing)
             if tts:
-                try:
-                    print("   🗣️  Speaking: 'You got it boss!'")
-                    # Create a simple greeting template
-                    template = GreetingTemplate(
-                        text="You got it boss!",
-                        emotion="excited",
-                        energy_level=4
-                    )
-                    # Speak using async method
-                    asyncio.run(tts.speak_greeting(template))
-                except Exception as e:
-                    print(f"   ⚠️  Speech failed: {e}")
+                def speak_in_background():
+                    try:
+                        template = GreetingTemplate(
+                            text="You got it boss!",
+                            emotion="excited",
+                            energy_level=4
+                        )
+                        asyncio.run(tts.speak_greeting(template))
+                    except Exception as e:
+                        print(f"   ⚠️  Speech failed: {e}")
+                
+                print("   🗣️  Speaking: 'You got it boss!'")
+                threading.Thread(target=speak_in_background, daemon=True).start()
         
         elif gesture_event.command == GestureCommand.SKIP:
             print("👋 Wave detected!")
             if tts:
-                try:
-                    template = GreetingTemplate(
-                        text="Hello there!",
-                        emotion="playful",
-                        energy_level=3
-                    )
-                    asyncio.run(tts.speak_greeting(template))
-                except:
-                    pass
+                def speak_wave():
+                    try:
+                        template = GreetingTemplate(
+                            text="Hello there!",
+                            emotion="playful",
+                            energy_level=3
+                        )
+                        asyncio.run(tts.speak_greeting(template))
+                    except:
+                        pass
+                threading.Thread(target=speak_wave, daemon=True).start()
         
         elif gesture_event.command == GestureCommand.PAUSE:
             print("✋ Palm stop detected!")
             if tts:
-                try:
-                    template = GreetingTemplate(
-                        text="Okay, I'll wait",
-                        emotion="calm",
-                        energy_level=2
-                    )
-                    asyncio.run(tts.speak_greeting(template))
-                except:
-                    pass
+                def speak_pause():
+                    try:
+                        template = GreetingTemplate(
+                            text="Okay, I'll wait",
+                            emotion="calm",
+                            energy_level=2
+                        )
+                        asyncio.run(tts.speak_greeting(template))
+                    except:
+                        pass
+                threading.Thread(target=speak_pause, daemon=True).start()
     
     event_manager.add_callback(EventType.GESTURE_DETECTED, on_gesture_detected)
     print("✓ Gesture callback registered")

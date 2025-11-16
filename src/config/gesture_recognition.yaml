@@ -87,7 +87,7 @@ temporal:
   
   # Cooldown time after gesture recognized (seconds)
   # Prevents rapid re-triggering
-  gesture_cooldown: 1.0
+  gesture_cooldown: 3.0
 
 # Distance Estimation Settings
 distance:
