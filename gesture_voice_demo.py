@@ -43,7 +43,7 @@ from src.coordination.gesture_coordinator import GestureCoordinator, GestureComm
 from src.events.event_system import EventManager, EventType
 from src.voice.adaptive_tts_manager import AdaptiveTTSManager
 from src.voice.greeting_selector import GreetingTemplate
-from src.behaviors.behavior_module import BehaviorManager
+from src.behaviors.behavior_module import BehaviorManager, greeting_wave
 import asyncio
 
 
@@ -194,7 +194,7 @@ def main():
             if behavior_manager and behavior_manager.reachy:
                 try:
                     print("   🤖 Reachy waving...")
-                    behavior_manager.execute_behavior("greeting_wave")
+                    behavior_manager.execute_behavior(greeting_wave)
                 except Exception as e:
                     print(f"   ⚠️  Wave failed: {e}")
             
