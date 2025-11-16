@@ -20,6 +20,18 @@ from typing import Optional
 import cv2
 import numpy as np
 
+# Load environment variables FIRST
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+    api_key = os.getenv("OPENAI_API_KEY")
+    if api_key:
+        print(f"✓ OpenAI API key loaded (starts with {api_key[:10]}...)")
+    else:
+        print("⚠️  No OPENAI_API_KEY in environment")
+except ImportError:
+    print("⚠️  python-dotenv not installed, skipping .env file")
+
 # Auto-detect platform and configure Qt
 if sys.platform.startswith("linux"):
     try:
@@ -168,9 +180,19 @@ def main():
     print("Initializing voice system...")
     try:
         tts = AdaptiveTTSManager(enable_caching=True)
-        print("✓ Voice system initialized (OpenAI TTS)")
+        print("✓ Voice system initialized")
+        
+        # Check which backends are available
+        backends = list(tts.backends.keys())
+        print(f"   Available backends: {[b.value for b in backends]}")
+        if not backends:
+            print("   ⚠️  No TTS backends available!")
+            tts = None
     except Exception as e:
-        print(f"⚠️  Voice system failed: {e}, continuing without voice")
+        print(f"⚠️  Voice system failed: {e}")
+        import traceback
+        traceback.print_exc()
+        print("Continuing without voice...")
         tts = None
     
     # Register callback for gesture events
