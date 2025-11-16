@@ -57,7 +57,7 @@ face_recognition:
 # ============================================================================
 events:
   # Debounce time - person must be detected for N seconds before triggering event
-  debounce_seconds: 3.0
+  debounce_seconds: 1.0
   
   # Departed threshold - person considered gone after N seconds not seen
   departed_threshold_seconds: 3.0
@@ -73,7 +73,7 @@ events:
 # ============================================================================
 behaviors:
   # Enable real robot control (false = simulation mode)
-  enable_robot: false
+  enable_robot: true
   
   # Gesture-speech coordination delay (seconds)
   gesture_speech_delay: 0.3
