@@ -495,6 +495,79 @@ neutral_pose = Behavior(
     priority=3
 )
 
+# Quick acknowledgment - immediate head nod when person detected
+look_at_person = Behavior(
+    name="look_at_person",
+    actions=[
+        # Quick down-up nod (acknowledgment)
+        BehaviorAction(
+            roll=0.0, pitch=-8.0, yaw=0.0,
+            duration=0.2,
+            blocking=True
+        ),
+        BehaviorAction(
+            roll=0.0, pitch=0.0, yaw=0.0,
+            duration=0.2,
+            blocking=True
+        )
+    ],
+    interruptible=False,
+    priority=9  # High priority - immediate response
+)
+
+# Subtle breathing/idle movement
+idle_breath = Behavior(
+    name="idle_breath",
+    actions=[
+        # Slight down movement (exhale)
+        BehaviorAction(
+            roll=0.0, pitch=-3.0, yaw=0.0,
+            duration=1.2,
+            blocking=True
+        ),
+        # Return up (inhale)
+        BehaviorAction(
+            roll=0.0, pitch=0.0, yaw=0.0,
+            duration=1.5,
+            blocking=True
+        )
+    ],
+    interruptible=True,
+    priority=2  # Low priority - easily interrupted
+)
+
+# Thinking/listening head tilt
+thinking_look = Behavior(
+    name="thinking_look",
+    actions=[
+        # Tilt head slightly right with small nod (attentive listening)
+        BehaviorAction(
+            roll=8.0, pitch=-5.0, yaw=0.0,
+            duration=0.3,
+            blocking=True
+        ),
+        # Hold position (processing)
+        BehaviorAction(
+            roll=8.0, pitch=-5.0, yaw=0.0,
+            duration=0.4,
+            blocking=True
+        ),
+        # Small nod (understanding)
+        BehaviorAction(
+            roll=8.0, pitch=-10.0, yaw=0.0,
+            duration=0.25,
+            blocking=True
+        ),
+        BehaviorAction(
+            roll=8.0, pitch=-5.0, yaw=0.0,
+            duration=0.25,
+            blocking=True
+        )
+    ],
+    interruptible=True,
+    priority=7
+)
+
 
 # =============================================================================
 # Demo / Testing

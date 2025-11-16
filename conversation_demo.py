@@ -46,7 +46,7 @@ from src.coordination.gesture_coordinator import GestureCoordinator, GestureComm
 from src.events.event_system import EventManager, EventType
 from src.voice.adaptive_tts_manager import AdaptiveTTSManager
 from src.voice.greeting_selector import GreetingTemplate
-from src.behaviors.behavior_module import BehaviorManager, greeting_wave
+from src.behaviors.behavior_module import BehaviorManager, greeting_wave, look_at_person, idle_breath, thinking_look
 
 # OpenAI client
 try:
@@ -381,7 +381,7 @@ def main():
     print("🤖 Reachy Conversational AI Demo (POC)")
     print("=" * 70)
     
-    # Setup camera
+    # Setup camera and Reachy
     camera = None
     reachy = None
     behavior_manager = None
@@ -392,6 +392,13 @@ def main():
         try:
             from reachy_mini import ReachyMini
             reachy = ReachyMini()
+            
+            # Initialize behavior manager immediately for responsive movements
+            try:
+                behavior_manager = BehaviorManager(enable_robot=True)
+                print("✓ Behavior manager ready")
+            except Exception as e:
+                print(f"⚠️  Behavior manager failed: {e}")
             
             # Test camera
             frame_data = reachy.media.get_frame()
@@ -476,11 +483,13 @@ def main():
     # State machine
     state = "IDLE"  # IDLE, GREETING, CONVERSING
     person_detected_time = None
-    person_present_threshold = 2.0  # seconds
+    person_present_threshold = 1.0  # seconds (reduced for faster response)
     no_person_timeout = 5.0  # seconds
     last_person_time = time.time()
     last_speech_time = None
     conversation_timeout = 30.0  # seconds
+    last_idle_behavior = time.time()
+    idle_behavior_interval = 8.0  # seconds between idle movements
     
     # Display window
     if not args.headless:
@@ -519,12 +528,30 @@ def main():
                     if person_detected_time is None:
                         person_detected_time = current_time
                         print("👀 Person detected...")
+                        
+                        # IMMEDIATE RESPONSE: Quick head nod acknowledgment
+                        if behavior_manager and behavior_manager.reachy:
+                            def quick_acknowledge():
+                                try:
+                                    behavior_manager.execute_behavior(look_at_person)
+                                except:
+                                    pass
+                            threading.Thread(target=quick_acknowledge, daemon=True).start()
                     
                     elif current_time - person_detected_time >= person_present_threshold:
                         # Person has been present long enough - greet them!
                         print("\n✨ Initiating conversation...")
                         state = "GREETING"
                         person_detected_time = None
+                        
+                        # Wave gesture IMMEDIATELY (before speech)
+                        if behavior_manager and behavior_manager.reachy:
+                            def wave_now():
+                                try:
+                                    behavior_manager.execute_behavior(greeting_wave)
+                                except:
+                                    pass
+                            threading.Thread(target=wave_now, daemon=True).start()
                         
                         # Generate and speak greeting
                         greeting = conversation_manager.generate_greeting()
@@ -547,6 +574,17 @@ def main():
                 
                 else:
                     person_detected_time = None
+                    
+                    # Idle breathing behavior when no one is around
+                    if behavior_manager and behavior_manager.reachy:
+                        if current_time - last_idle_behavior >= idle_behavior_interval:
+                            def idle_movement():
+                                try:
+                                    behavior_manager.execute_behavior(idle_breath)
+                                except:
+                                    pass
+                            threading.Thread(target=idle_movement, daemon=True).start()
+                            last_idle_behavior = current_time
             
             elif state == "CONVERSING":
                 if person_present:
@@ -558,7 +596,16 @@ def main():
                         last_speech_time = current_time
                         print(f"👤 User: {speech_text}")
                         
-                        # Get GPT-4 response
+                        # IMMEDIATE RESPONSE: Head tilt/nod to show listening
+                        if behavior_manager and behavior_manager.reachy:
+                            def show_listening():
+                                try:
+                                    behavior_manager.execute_behavior(thinking_look)
+                                except:
+                                    pass
+                            threading.Thread(target=show_listening, daemon=True).start()
+                        
+                        # Get GPT-4 response with thinking animation
                         def handle_response():
                             response = asyncio.run(conversation_manager.get_response(speech_text))
                             print(f"🤖 Reachy: {response}")
