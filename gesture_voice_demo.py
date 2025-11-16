@@ -224,6 +224,8 @@ def main():
             # Speak response (in background thread to avoid freezing)
             if tts:
                 def speak_in_background():
+                    if tts is None:
+                        return
                     try:
                         template = GreetingTemplate(
                             text="You got it boss!",
@@ -241,6 +243,8 @@ def main():
             print("👋 Wave detected!")
             if tts:
                 def speak_wave():
+                    if tts is None:
+                        return
                     try:
                         template = GreetingTemplate(
                             text="Hello there!",
@@ -256,6 +260,8 @@ def main():
             print("✋ Palm stop detected!")
             if tts:
                 def speak_pause():
+                    if tts is None:
+                        return
                     try:
                         template = GreetingTemplate(
                             text="Okay, I'll wait",
