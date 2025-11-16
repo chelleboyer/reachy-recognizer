@@ -26,13 +26,13 @@ gestures:
   # Wave Gesture
   wave:
     # Minimum confidence score to register gesture (0.0-1.0)
-    min_confidence: 0.70
+    min_confidence: 0.50
     
     # Minimum hand movement amplitude (normalized units)
-    min_movement_amplitude: 0.1
+    min_movement_amplitude: 0.08
     
     # Maximum hand movement amplitude (normalized units)
-    max_movement_amplitude: 0.4
+    max_movement_amplitude: 0.5
     
     # Oscillation detection: minimum number of direction changes
     min_direction_changes: 2
@@ -47,24 +47,24 @@ gestures:
     max_frequency: 4.0
     
     # Fingers must be extended for wave
-    min_finger_extension: 0.6
+    min_finger_extension: 0.4
   
   # Palm Stop Gesture
   palm_stop:
     # Minimum confidence score to register gesture (0.0-1.0)
-    min_confidence: 0.80
+    min_confidence: 0.65
     
     # All fingers must be extended this much (normalized units)
-    min_all_fingers_extension: 0.7
+    min_all_fingers_extension: 0.5
     
     # Maximum angle deviation from palm facing camera (degrees)
-    max_palm_angle: 25
+    max_palm_angle: 35
     
     # Minimum finger spread (normalized units)
-    min_finger_spread: 0.15
+    min_finger_spread: 0.10
     
     # Fingers pointing upward: maximum angle from vertical (degrees)
-    max_finger_vertical_angle: 30
+    max_finger_vertical_angle: 40
     
     # Palm must be relatively stable (max movement in normalized units)
     max_palm_movement: 0.05
