@@ -1,0 +1,42 @@
+# Raspberry Pi Linux Requirements
+# Optimized for ARM64 architecture (Raspberry Pi 4/5)
+
+# Core dependencies - lightweight versions for Pi
+fastapi>=0.100.0
+numpy>=1.24.0
+opencv-python>=4.8.0  # Will use system opencv if available
+pydub>=0.25.1
+pynput>=1.8.1
+python-dotenv>=1.1.1
+pyyaml>=6.0
+rich>=14.2.0
+uvicorn>=0.23.0
+
+# Reachy SDK and toolbox
+reachy-mini-dances-library @ git+https://github.com/pollen-robotics/reachy_mini_dances_library
+reachy-mini-toolbox[vision] @ git+https://github.com/pollen-robotics/reachy_mini_toolbox
+reachy-mini[mujoco]>=1.0.0rc5
+
+# Audio - use system libraries on Pi
+# librosa>=0.11.0  # Commented - install via apt: python3-librosa
+# pyttsx3>=2.90  # Commented - install via apt: python3-pyttsx3
+
+# OpenAI - may need to build on Pi
+openai>=2.4.0  # Removed [voice-helpers] to avoid binary dependencies
+
+# Dev dependencies
+pillow>=12.0.0
+pytest>=9.0.1
+
+# NOTES FOR PI INSTALLATION:
+# 1. Install system packages first:
+#    sudo apt install -y python3-opencv python3-numpy python3-librosa python3-pyttsx3
+#
+# 2. For better performance, use system opencv:
+#    Skip opencv-python and use: sudo apt install python3-opencv
+#
+# 3. Skip face-recognition library - we use OpenCV SFace model instead
+#    (Already implemented in src/vision/face_encoder.py)
+#
+# 4. For audio support:
+#    sudo apt install -y portaudio19-dev libsndfile1

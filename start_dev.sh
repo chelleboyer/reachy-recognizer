@@ -56,10 +56,35 @@ echo "✓ OpenCV video backend configured"
 echo "✓ PYTHONPATH set to include project root"
 echo ""
 
+# Detect if running on Raspberry Pi
+IS_PI=false
+if [ -f /proc/device-tree/model ] && grep -q "Raspberry Pi" /proc/device-tree/model 2>/dev/null; then
+    IS_PI=true
+    echo "🥧 Detected Raspberry Pi"
+fi
+
 # Check for required packages and install if missing
 echo "Checking required packages..."
 missing_packages=()
-packages=("opencv-python" "numpy" "face-recognition" "pyyaml")
+
+# Base packages (always needed)
+packages=("numpy" "pyyaml")
+
+# Add opencv and face-recognition based on platform
+if [ "$IS_PI" = true ]; then
+    # On Pi, check for system opencv first
+    if $PYTHON_CMD -c "import cv2" 2>/dev/null; then
+        echo "✓ opencv (system package)"
+    else
+        packages+=("opencv-python")
+    fi
+    # Skip face-recognition on Pi - we use OpenCV SFace model
+    echo "○ face-recognition (not needed - using OpenCV SFace)"
+else
+    # On desktop, include both
+    packages+=("opencv-python")
+    # face-recognition is optional even on desktop
+fi
 
 for package in "${packages[@]}"; do
     module_name=$(echo $package | tr '-' '_')
@@ -88,7 +113,12 @@ if [ ${#missing_packages[@]} -gt 0 ]; then
     read -r response
     if [[ "$response" =~ ^[Yy]$ ]]; then
         echo "Installing missing packages..."
-        if [ -f "requirements.txt" ]; then
+        
+        # Choose requirements file based on platform
+        if [ "$IS_PI" = true ] && [ -f "requirements-pi.txt" ]; then
+            echo "Using requirements-pi.txt (optimized for Raspberry Pi)..."
+            pip install -r requirements-pi.txt
+        elif [ -f "requirements.txt" ]; then
             echo "Installing from requirements.txt..."
             pip install -r requirements.txt
         else
@@ -101,7 +131,11 @@ if [ ${#missing_packages[@]} -gt 0 ]; then
         echo ""
     else
         echo "⚠️  Some packages are missing. Install them manually:"
-        echo "   pip install ${missing_packages[*]}"
+        if [ "$IS_PI" = true ] && [ -f "requirements-pi.txt" ]; then
+            echo "   pip install -r requirements-pi.txt"
+        else
+            echo "   pip install ${missing_packages[*]}"
+        fi
         echo ""
     fi
 fi
