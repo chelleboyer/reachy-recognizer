@@ -35,7 +35,7 @@ except ImportError:
 
 # MediaPipe drawing utilities
 try:
-    import mediapipe as mp
+    import mediapipe as mp  # type: ignore
     mp_drawing = mp.solutions.drawing_utils
     mp_drawing_styles = mp.solutions.drawing_styles
     mp_hands = mp.solutions.hands
@@ -203,10 +203,12 @@ def main():
                     time.sleep(0.033)
                     continue
                 frame = np.asarray(frame, dtype=np.uint8)
-            else:
+            elif camera is not None:
                 ret, frame = camera.read()
                 if not ret:
                     continue
+            else:
+                break  # No camera available
             
             # Detect hands
             hands = detector.detect(frame)
