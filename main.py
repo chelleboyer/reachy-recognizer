@@ -109,11 +109,14 @@ def main():
         
         # CRITICAL: Re-register coordinator with pipeline's event manager
         # The pipeline creates its own EventManager, so we need to use that one
-        pipeline.event_manager.add_callback(
-            EventType.PERSON_RECOGNIZED,
-            coordinator._on_person_recognized
-        )
-        logger.info("✓ Coordinator connected to pipeline events")
+        if pipeline.event_manager:
+            pipeline.event_manager.add_callback(
+                EventType.PERSON_RECOGNIZED,
+                coordinator._on_person_recognized
+            )
+            logger.info("✓ Coordinator connected to pipeline events")
+        else:
+            logger.warning("⚠️  Event system not enabled in pipeline")
         
     except Exception as e:
         logger.error(f"Failed to initialize subsystems: {e}", exc_info=True)
@@ -148,19 +151,24 @@ def main():
             # Process frame
             results = pipeline.process_frame(frame)
             
+            # Log detection results
+            if results:
+                for name, confidence, (top, right, bottom, left) in results:
+                    print(f"👤 Detected: {name} (confidence: {confidence:.2%})")
+                    logger.info(f"Face detected: {name} with {confidence:.2%} confidence")
+            
             # Display if debug mode
             if config.system.debug_display:
                 # Draw results
-                for face_box, name, confidence in results:
-                    x, y, w, h = face_box
-                    color = (0, 255, 0) if name != "Unknown" else (0, 165, 255)
-                    cv2.rectangle(frame, (x, y), (x+w, y+h), color, 2)
+                for name, confidence, (top, right, bottom, left) in results:
+                    color = (0, 255, 0) if name != "unknown" else (0, 165, 255)
+                    cv2.rectangle(frame, (left, top), (right, bottom), color, 2)
                     
                     label = f"{name}"
                     if confidence:
                         label += f" ({confidence:.0%})"
                     
-                    cv2.putText(frame, label, (x, y-10),
+                    cv2.putText(frame, label, (left, top-10),
                               cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
                 
                 cv2.imshow('Reachy Recognizer', frame)
