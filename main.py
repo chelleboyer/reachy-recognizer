@@ -192,6 +192,13 @@ def main():
                     print(f"👤 Detected: {name} (confidence: {confidence:.2%})")
                     logger.info(f"Face detected: {name} with {confidence:.2%} confidence")
             
+            # Check for events
+            if pipeline.event_manager:
+                recent_events = pipeline.event_manager.get_recent_events(1)
+                if recent_events:
+                    event = recent_events[0]
+                    print(f"🎯 Event fired: {event.event_type.name} for {event.person_name}")
+            
             # Display if debug mode
             if config.system.debug_display:
                 # Draw results
