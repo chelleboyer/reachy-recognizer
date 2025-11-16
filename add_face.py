@@ -3,10 +3,15 @@ Quick script to add a face to the database for testing.
 Captures a photo from webcam or Reachy camera and adds it with a name.
 """
 
-import cv2
+import os
 import sys
 import time
 from pathlib import Path
+
+# Fix OpenCV Qt platform plugin error on Windows - use Windows native backend
+os.environ["OPENCV_VIDEOIO_PRIORITY_MSMF"] = "0"
+
+import cv2
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent))
