@@ -1,7 +1,7 @@
 """Gesture Recognition with Voice Response Demo
 
 Demonstrates Reachy responding to thumbs up gesture with voice.
-When thumbs up is detected, Reachy says "You got it boss!"
+When thumbs up is detected, Reachy says "Thumbs Up!"
 
 Usage:
     python gesture_voice_demo.py
@@ -252,7 +252,7 @@ def main():
                         return
                     try:
                         template = GreetingTemplate(
-                            text="You got it boss!",
+                            text="Thumbs Up!",
                             emotion="excited",
                             energy_level=4
                         )
@@ -260,7 +260,7 @@ def main():
                     except Exception as e:
                         print(f"   ⚠️  Speech failed: {e}")
                 
-                print("   🗣️  Speaking: 'You got it boss!'")
+                print("   🗣️  Speaking: 'Thumbs Up!'")
                 threading.Thread(target=speak_in_background, daemon=True).start()
         
         elif gesture_event.command == GestureCommand.SKIP:

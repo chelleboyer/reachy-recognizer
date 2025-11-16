@@ -146,7 +146,7 @@ When `--benchmark` is enabled:
 ## Gesture Reference
 
 ### Thumbs Up 👍
-- **Action**: "You got it boss!" + Reachy waves
+- **Action**: "Thumbs Up!" + Reachy waves
 - **Detection**: Thumb extended upward, other fingers closed
 - **Hold Time**: 0.5 seconds
 - **Cooldown**: 1.0 seconds

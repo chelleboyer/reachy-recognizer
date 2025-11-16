@@ -38,4 +38,4 @@ echo "Press Ctrl+C to stop"
 echo ""
 
 # Run the daemon (it will auto-detect the port)
-reachy-mini-daemon
+uvx --from reachy-mini reachy-mini-daemon
