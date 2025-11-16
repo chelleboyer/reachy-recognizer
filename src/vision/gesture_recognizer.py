@@ -455,12 +455,7 @@ class GestureRecognizer:
     def _is_palm_stop(self, hand: HandLandmarks) -> float:
         """Detect palm stop gesture.
         
-        Palm stop criteria:
-        - All fingers extended
-        - Palm facing camera (z-coordinates similar)
-        - Fingers pointing upward
-        - Adequate finger spread
-        - Palm relatively stable
+        VERY simple palm stop: just check if hand is open with fingers visible.
         
         Args:
             hand: Hand landmarks
@@ -470,67 +465,40 @@ class GestureRecognizer:
         """
         landmarks = hand.landmarks
         
-        # Get fingertip and MCP positions
-        fingertips = [
-            landmarks[self.THUMB_TIP],
-            landmarks[self.INDEX_TIP],
-            landmarks[self.MIDDLE_TIP],
-            landmarks[self.RING_TIP],
-            landmarks[self.PINKY_TIP]
-        ]
-        
-        mcps = [
-            landmarks[self.THUMB_IP],  # Use IP for thumb
-            landmarks[self.INDEX_MCP],
-            landmarks[self.MIDDLE_MCP],
-            landmarks[self.RING_MCP],
-            landmarks[self.PINKY_MCP]
-        ]
-        
         wrist = landmarks[self.WRIST]
         
-        # Check all fingers are extended (fingertips above MCPs)
-        min_ext = self.palm_stop_config.get('min_all_fingers_extension', 0.7)
-        extensions = []
-        for tip, mcp in zip(fingertips, mcps):
-            ext = abs(tip[1] - mcp[1])
-            extensions.append(ext)
-            if ext < min_ext:
-                return 0.0
+        # Get fingertips
+        index_tip = landmarks[self.INDEX_TIP]
+        middle_tip = landmarks[self.MIDDLE_TIP]
+        ring_tip = landmarks[self.RING_TIP]
+        pinky_tip = landmarks[self.PINKY_TIP]
         
-        # Check fingers pointing upward (y decreases going up)
-        avg_finger_angle = 0
-        for tip, mcp in zip(fingertips[1:], mcps[1:]):  # Skip thumb
-            vector = (tip[0] - mcp[0], tip[1] - mcp[1])
-            angle = math.degrees(math.atan2(abs(vector[0]), -vector[1]))
-            avg_finger_angle += angle
-        avg_finger_angle /= 4.0
+        # Simple check: are fingertips above wrist? (lower y = higher on screen)
+        fingers_above_wrist = 0
+        for tip in [index_tip, middle_tip, ring_tip, pinky_tip]:
+            if tip[1] < wrist[1] - 0.05:  # tip significantly above wrist
+                fingers_above_wrist += 1
         
-        max_vertical_angle = self.palm_stop_config.get('max_finger_vertical_angle', 30)
-        if avg_finger_angle > max_vertical_angle:
+        # Need at least 3 fingers above wrist
+        if fingers_above_wrist < 3:
             return 0.0
         
-        # Check finger spread
-        finger_x_positions = [tip[0] for tip in fingertips]
-        spread = max(finger_x_positions) - min(finger_x_positions)
-        min_spread = self.palm_stop_config.get('min_finger_spread', 0.15)
+        # Check finger spread (fingers should be apart, not touching)
+        finger_x = [index_tip[0], middle_tip[0], ring_tip[0], pinky_tip[0]]
+        spread = max(finger_x) - min(finger_x)
         
-        if spread < min_spread:
+        # Very lenient minimum spread
+        if spread < 0.05:  # fingers too close together
             return 0.0
         
-        # Check palm facing camera (similar z-coordinates)
-        # This is approximated by checking the z-variance
-        mcp_z = [mcp[2] for mcp in mcps]
-        z_variance = np.var(mcp_z) if len(mcp_z) > 0 else 1.0
+        # Calculate simple confidence
+        finger_score = fingers_above_wrist / 4.0  # 0.75 to 1.0
+        spread_score = min(1.0, spread / 0.15)    # normalize spread
         
-        # Calculate confidence
-        extension_score = min(1.0, np.mean(extensions) / min_ext)
-        angle_score = 1.0 - (avg_finger_angle / max_vertical_angle)
-        spread_score = min(1.0, spread / (min_spread * 2))
-        palm_score = 1.0 - min(1.0, z_variance * 10)  # Lower variance = higher score
+        confidence = (finger_score + spread_score) / 2.0
         
-        confidence = (extension_score + angle_score + spread_score + palm_score) / 4.0
-        min_conf = self.palm_stop_config.get('min_confidence', 0.80)
+        # Very low threshold
+        min_conf = self.palm_stop_config.get('min_confidence', 0.50)
         
         return confidence if confidence >= min_conf else 0.0
     
