@@ -70,11 +70,16 @@ echo "Installing OpenCV and numeric libraries (system packages - faster on Pi)..
 sudo apt install -y python3-opencv python3-numpy python3-pil python3-yaml
 
 echo ""
-read -p "Install audio support? (optional - for voice features) (y/n) " -n 1 -r
+read -p "Install audio support libraries? (optional - for voice features) (y/n) " -n 1 -r
 echo
+INSTALL_AUDIO=false
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-    sudo apt install -y python3-librosa python3-pyttsx3 portaudio19-dev libsndfile1
-    echo "✓ Audio support installed"
+    # Install audio development libraries (needed for pip packages)
+    echo "Installing audio development libraries..."
+    sudo apt install -y portaudio19-dev libsndfile1 libsndfile1-dev
+    sudo apt install -y ffmpeg  # For pydub/audio processing
+    echo "✓ Audio libraries installed (Python packages will be installed via pip)"
+    INSTALL_AUDIO=true
 else
     echo "⏭️  Skipped audio support"
 fi
@@ -116,6 +121,14 @@ echo "Installing from requirements-pi.txt (optimized for Raspberry Pi)..."
 if [[ -f "requirements-pi.txt" ]]; then
     pip install -r requirements-pi.txt
     echo "✓ Installed Pi requirements"
+    
+    # Install audio packages if user opted in
+    if [[ "$INSTALL_AUDIO" = true ]]; then
+        echo ""
+        echo "Installing audio packages via pip..."
+        pip install librosa pyttsx3 pydub
+        echo "✓ Audio Python packages installed"
+    fi
 else
     echo "⚠️  requirements-pi.txt not found, using requirements.txt"
     pip install -r requirements.txt

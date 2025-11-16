@@ -17,10 +17,10 @@ sudo apt update && sudo apt upgrade -y
 
 # Install system packages (recommended - faster than pip on Pi)
 sudo apt install -y python3-opencv python3-numpy python3-pip python3-venv
-sudo apt install -y python3-pyyaml python3-pil
+sudo apt install -y python3-yaml python3-pil
 
-# Optional audio support
-sudo apt install -y python3-librosa python3-pyttsx3 portaudio19-dev libsndfile1
+# Optional audio support (libraries for pip packages)
+sudo apt install -y portaudio19-dev libsndfile1 libsndfile1-dev ffmpeg
 ```
 
 ### 2. Clone Repository
@@ -42,6 +42,9 @@ source .venv/bin/activate
 ```bash
 # Use Pi-specific requirements (lighter dependencies)
 pip install -r requirements-pi.txt
+
+# Optional: Install audio packages if needed for voice features
+pip install librosa pyttsx3 pydub
 
 # OR if you want full desktop version:
 # pip install -r requirements.txt
