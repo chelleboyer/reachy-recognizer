@@ -6,6 +6,48 @@ echo "🚀 Setting up Reachy Recognizer Development Environment"
 echo "============================================================"
 echo ""
 
+# Check Python version
+echo "Checking Python environment..."
+if command -v python3 &> /dev/null; then
+    python3 --version
+    PYTHON_CMD=python3
+elif command -v python &> /dev/null; then
+    python --version
+    PYTHON_CMD=python
+else
+    echo "❌ Python not found"
+    return 1 2>/dev/null || exit 1
+fi
+echo "✓ Python ready"
+echo ""
+
+# Check for and activate virtual environment
+echo "Checking for virtual environment..."
+if [ -n "$VIRTUAL_ENV" ]; then
+    echo "✓ Virtual environment already active: $VIRTUAL_ENV"
+elif [ -d ".venv" ]; then
+    echo "Found .venv directory, activating..."
+    source .venv/bin/activate
+    echo "✓ Virtual environment activated: $VIRTUAL_ENV"
+elif [ -d "venv" ]; then
+    echo "Found venv directory, activating..."
+    source venv/bin/activate
+    echo "✓ Virtual environment activated: $VIRTUAL_ENV"
+else
+    echo "No virtual environment found. Create one? (y/n)"
+    read -r response
+    if [[ "$response" =~ ^[Yy]$ ]]; then
+        echo "Creating virtual environment..."
+        $PYTHON_CMD -m venv .venv
+        source .venv/bin/activate
+        echo "✓ Virtual environment created and activated"
+    else
+        echo "⚠️  No virtual environment active"
+        echo "   Consider creating one: python3 -m venv .venv"
+    fi
+fi
+echo ""
+
 # Set environment variables for OpenCV
 echo "Setting environment variables..."
 export OPENCV_VIDEOIO_PRIORITY_MSMF=0
@@ -14,42 +56,55 @@ echo "✓ OpenCV video backend configured"
 echo "✓ PYTHONPATH set to include project root"
 echo ""
 
-# Check Python version
-echo "Checking Python environment..."
-python3 --version
-echo "✓ Python ready"
-
-# Check if virtual environment is active
-if [ -n "$VIRTUAL_ENV" ]; then
-    echo "✓ Virtual environment active: $VIRTUAL_ENV"
-else
-    echo "⚠️  No virtual environment active"
-    echo "   Consider activating one for isolation"
-fi
-echo ""
-
-# Check for required packages
+# Check for required packages and install if missing
 echo "Checking required packages..."
+missing_packages=()
 packages=("opencv-python" "numpy" "face-recognition" "pyyaml")
 
 for package in "${packages[@]}"; do
     module_name=$(echo $package | tr '-' '_')
-    if python3 -c "import $module_name" 2>/dev/null; then
+    if $PYTHON_CMD -c "import $module_name" 2>/dev/null; then
         echo "✓ $package"
     else
         echo "✗ $package (not installed)"
+        missing_packages+=("$package")
     fi
 done
-echo ""
 
 # Check for Reachy SDK (optional)
+echo ""
 echo "Checking optional packages..."
-if python3 -c "import reachy_mini" 2>/dev/null; then
+if $PYTHON_CMD -c "import reachy_mini" 2>/dev/null; then
     echo "✓ reachy-mini (for robot control)"
 else
     echo "○ reachy-mini (optional - for robot control)"
 fi
 echo ""
+
+# Install missing packages
+if [ ${#missing_packages[@]} -gt 0 ]; then
+    echo "⚠️  ${#missing_packages[@]} package(s) missing"
+    echo "Install missing packages? (y/n)"
+    read -r response
+    if [[ "$response" =~ ^[Yy]$ ]]; then
+        echo "Installing missing packages..."
+        if [ -f "requirements.txt" ]; then
+            echo "Installing from requirements.txt..."
+            pip install -r requirements.txt
+        else
+            echo "Installing individual packages..."
+            for pkg in "${missing_packages[@]}"; do
+                pip install "$pkg"
+            done
+        fi
+        echo "✓ Package installation complete"
+        echo ""
+    else
+        echo "⚠️  Some packages are missing. Install them manually:"
+        echo "   pip install ${missing_packages[*]}"
+        echo ""
+    fi
+fi
 
 # Show available commands
 echo "Available commands:"
