@@ -107,6 +107,12 @@ def main():
         pipeline.load_database("data/faces.json")
         logger.info("✓ Recognition pipeline initialized")
         
+        # Use Reachy's camera if robot is enabled (instead of webcam)
+        reachy_camera = None
+        if config.behaviors.enable_robot and behavior_manager.reachy:
+            reachy_camera = behavior_manager.reachy
+            logger.info("✓ Using Reachy camera for recognition")
+        
         # CRITICAL: Re-register coordinator with pipeline's event manager
         # The pipeline creates its own EventManager, so we need to use that one
         if pipeline.event_manager:
@@ -143,10 +149,22 @@ def main():
     try:
         # Run recognition loop
         import cv2
+        import numpy as np
+        import time
+        
         while True:
-            ret, frame = pipeline.camera.read_frame()
-            if not ret or frame is None:
-                continue
+            # Get frame from Reachy camera or webcam
+            if reachy_camera:
+                frame = reachy_camera.media.get_frame()
+                if frame is None:
+                    time.sleep(0.033)  # ~30 FPS
+                    continue
+                # Ensure it's an ndarray
+                frame = np.asarray(frame, dtype=np.uint8)
+            else:
+                ret, frame = pipeline.camera.read_frame()
+                if not ret or frame is None:
+                    continue
             
             # Process frame
             results = pipeline.process_frame(frame)
@@ -183,7 +201,8 @@ def main():
         return 1
     finally:
         # Cleanup
-        pipeline.camera.release()
+        if not reachy_camera:
+            pipeline.camera.release()
         idle_manager.stop()
         if config.system.debug_display:
             cv2.destroyAllWindows()
