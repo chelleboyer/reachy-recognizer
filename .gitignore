@@ -32,6 +32,10 @@ models/*.onnx
 models/*.pb
 models/*.caffemodel
 
+# Vosk speech recognition models (download separately)
+models/vosk-model-*/
+models/vosk-model*.zip
+
 # Face database (contains personal data)
 faces.json
 faces.json.bak
