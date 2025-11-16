@@ -36,8 +36,14 @@ except ImportError:
     REACHY_AVAILABLE = False
     print("⚠️  Reachy SDK not available - will use webcam")
 
-def capture_and_add_face(name: str, use_reachy: bool = False):
-    """Capture face from webcam or Reachy camera and add to database."""
+def capture_and_add_face(name: str, use_reachy: bool = False, reachy_remote: bool = False):
+    """Capture face from webcam or Reachy camera and add to database.
+    
+    Args:
+        name: Name for the person
+        use_reachy: Use Reachy camera instead of webcam
+        reachy_remote: Connect to remote Reachy (not localhost)
+    """
     
     print(f"\n📸 Capturing face for: {name}")
     print("=" * 60)
@@ -56,8 +62,12 @@ def capture_and_add_face(name: str, use_reachy: bool = False):
     
     if use_reachy and REACHY_AVAILABLE:
         try:
-            print("Connecting to Reachy...")
-            reachy = ReachyMini()
+            if reachy_remote:
+                print("Connecting to remote Reachy (make sure daemon is running with --no-localhost-only)...")
+                reachy = ReachyMini(localhost_only=False)
+            else:
+                print("Connecting to Reachy...")
+                reachy = ReachyMini()
             camera_worker = CameraWorker(reachy, head_tracker=None)
             camera_worker.start()
             
@@ -209,6 +219,8 @@ if __name__ == "__main__":
     parser.add_argument('name', nargs='?', default=None, help='Name for the person')
     parser.add_argument('--reachy', action='store_true', 
                        help='Use Reachy camera instead of webcam')
+    parser.add_argument('--remote', action='store_true',
+                       help='Connect to remote Reachy (not localhost). Requires daemon running with --no-localhost-only')
     
     args = parser.parse_args()
     
@@ -220,5 +232,5 @@ if __name__ == "__main__":
             print("❌ Name cannot be empty")
             sys.exit(1)
     
-    success = capture_and_add_face(name, use_reachy=args.reachy)
+    success = capture_and_add_face(name, use_reachy=args.reachy, reachy_remote=args.remote)
     sys.exit(0 if success else 1)
