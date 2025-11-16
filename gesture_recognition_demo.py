@@ -81,8 +81,11 @@ def setup_reachy_camera():
         reachy = ReachyMini()
         
         # Test camera access
-        frame = reachy.media.get_frame()
-        if frame is None or frame.size == 0:
+        frame_data = reachy.media.get_frame()
+        if frame_data is None:
+            raise RuntimeError("Reachy camera returned None")
+        frame = np.asarray(frame_data)
+        if frame.size == 0:
             raise RuntimeError("Reachy camera returned empty frame")
         
         print("✓ Reachy camera ready!")
