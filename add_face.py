@@ -148,11 +148,9 @@ def capture_and_add_face(name: str, use_reachy: bool = False):
             if len(faces) == 1:
                 print(f"\n📷 Capturing face for {name}...")
                 
-                # Convert back to BGR if from Reachy (database expects BGR)
-                frame_for_db = frame if not use_reachy else cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                
-                # Add to database (it will auto-detect and encode)
-                success = database.add_face(name, frame_for_db, auto_detect=True)
+                # Frame is already in BGR format (either from webcam or converted from Reachy RGB)
+                # Database expects BGR, so use frame as-is
+                success = database.add_face(name, frame, auto_detect=True)
                 
                 if success:
                     # Save the database
