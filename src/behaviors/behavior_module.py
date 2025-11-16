@@ -137,7 +137,8 @@ class BehaviorManager:
             try:
                 logger.info("Attempting to connect to Reachy...")
                 logger.info("This may take 10-15 seconds...")
-                self.reachy = ReachyMini(media_backend="no_media", timeout=30)
+                # Enable media backend for camera access
+                self.reachy = ReachyMini(timeout=30)
                 self.auto_connected = True
                 logger.info("✓ Connected to Reachy successfully")
             except Exception as e:

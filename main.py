@@ -103,9 +103,15 @@ def main():
         
         # Recognition pipeline (don't init webcam if using Reachy camera)
         from src.vision.camera_interface import CameraInterface
-        dummy_camera = None
-        if not use_reachy_cam:
-            dummy_camera = CameraInterface()
+        
+        # Create a dummy camera that doesn't actually open hardware
+        class DummyCamera:
+            def read_frame(self):
+                return False, None
+            def release(self):
+                pass
+        
+        dummy_camera = DummyCamera() if use_reachy_cam else CameraInterface()
         
         pipeline = RecognitionPipeline(
             recognition_threshold=config.face_recognition.threshold,
