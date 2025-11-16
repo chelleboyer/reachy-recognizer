@@ -92,6 +92,10 @@ def capture_and_add_face(name: str, use_reachy: bool = False):
     print("  - Press ESC to cancel")
     print("\nWaiting for face...")
     
+    # Create window and ensure it's visible
+    window_name = 'Add Face to Database'
+    cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+    
     captured = False
     
     while not captured:
@@ -132,7 +136,8 @@ def capture_and_add_face(name: str, use_reachy: bool = False):
             cv2.putText(display_frame, "Face detected! Press SPACE to capture", 
                        (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
         
-        cv2.imshow('Add Face to Database', display_frame)
+        # Display the frame
+        cv2.imshow(window_name, display_frame)
         
         key = cv2.waitKey(1) & 0xFF
         
