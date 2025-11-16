@@ -385,21 +385,40 @@ def main():
     camera = None
     reachy = None
     behavior_manager = None
+    use_reachy_camera = False
     
     if args.reachy:
-        print("🔍 Reachy mode (not implemented in POC)")
-        print("   Using webcam for now...")
+        print("🔍 Connecting to Reachy...")
+        try:
+            from reachy_mini import ReachyMini
+            reachy = ReachyMini()
+            
+            # Test camera
+            frame_data = reachy.media.get_frame()
+            if frame_data is not None:
+                frame = np.asarray(frame_data)
+                if frame.size > 0:
+                    use_reachy_camera = True
+                    print("✓ Reachy camera ready")
+                else:
+                    print("⚠️  Reachy camera returned empty frame, using webcam fallback")
+            else:
+                print("⚠️  Reachy camera returned None, using webcam fallback")
+        except Exception as e:
+            print(f"⚠️  Failed to connect to Reachy: {e}")
+            print("   Using webcam fallback...")
     
-    print(f"📷 Opening webcam (index {args.camera_index})...")
-    if sys.platform.startswith("win"):
-        camera = cv2.VideoCapture(args.camera_index, cv2.CAP_DSHOW)
-    else:
-        camera = cv2.VideoCapture(args.camera_index)
-    
-    if not camera.isOpened():
-        print("✗ Failed to open camera")
-        return 1
-    print("✓ Camera opened")
+    if not use_reachy_camera:
+        print(f"📷 Opening webcam (index {args.camera_index})...")
+        if sys.platform.startswith("win"):
+            camera = cv2.VideoCapture(args.camera_index, cv2.CAP_DSHOW)
+        else:
+            camera = cv2.VideoCapture(args.camera_index)
+        
+        if not camera.isOpened():
+            print("✗ Failed to open camera")
+            return 1
+        print("✓ Camera opened")
     
     # Initialize components
     print("\n🔧 Initializing components...")
@@ -471,9 +490,19 @@ def main():
     try:
         while True:
             # Get frame
-            ret, frame = camera.read()
-            if not ret:
-                print("Failed to read frame")
+            if use_reachy_camera and reachy:
+                frame_data = reachy.media.get_frame()
+                if frame_data is None:
+                    print("Failed to read frame from Reachy")
+                    break
+                frame = np.asarray(frame_data)
+            elif camera is not None:
+                ret, frame = camera.read()
+                if not ret:
+                    print("Failed to read frame from webcam")
+                    break
+            else:
+                print("No camera available")
                 break
             
             # Detect person
@@ -599,7 +628,8 @@ def main():
         print("\nCleaning up...")
         speech_recognizer.stop_listening()
         person_detector.close()
-        camera.release()
+        if camera is not None:
+            camera.release()
         if not args.headless:
             cv2.destroyAllWindows()
         print("✓ Done")
