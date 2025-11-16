@@ -126,8 +126,8 @@ if [[ -f "requirements-pi.txt" ]]; then
     if [[ "$INSTALL_AUDIO" = true ]]; then
         echo ""
         echo "Installing audio packages via pip..."
-        pip install librosa pyttsx3 pydub
-        echo "✓ Audio Python packages installed"
+        pip install pygame pyaudio librosa pyttsx3 pydub
+        echo "✓ Audio Python packages installed (pygame, pyaudio, librosa, pyttsx3, pydub)"
     fi
 else
     echo "⚠️  requirements-pi.txt not found, using requirements.txt"

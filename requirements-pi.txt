@@ -17,9 +17,11 @@ reachy-mini-dances-library @ git+https://github.com/pollen-robotics/reachy_mini_
 reachy-mini-toolbox[vision] @ git+https://github.com/pollen-robotics/reachy_mini_toolbox
 reachy-mini[mujoco]>=1.0.0rc5
 
-# Audio - Install via setup_pi.sh if needed (optional)
+# Audio - Install via setup_pi.sh if needed (optional for voice demos)
 # librosa>=0.11.0  # Optional - install separately if using voice features
 # pyttsx3>=2.90  # Optional - install separately if using voice features
+# pygame>=2.5.0  # Optional - for audio playback
+# pyaudio>=0.2.13  # Optional - for microphone input
 
 # OpenAI - may need to build on Pi
 openai>=2.4.0  # Removed [voice-helpers] to avoid binary dependencies
@@ -35,9 +37,9 @@ pytest>=9.0.1
 #    sudo apt install -y python3-opencv python3-numpy python3-yaml python3-pil
 #    pip install -r requirements-pi.txt
 #
-# 3. For audio support (optional):
+# 3. For audio/voice support (optional - needed for voice_demo.py):
 #    sudo apt install -y portaudio19-dev libsndfile1 libsndfile1-dev ffmpeg
-#    pip install librosa pyttsx3 pydub
+#    pip install pygame pyaudio librosa pyttsx3 pydub
 #
 # 4. We use OpenCV SFace model (not face-recognition library)
 #    Already implemented in src/vision/face_encoder.py
