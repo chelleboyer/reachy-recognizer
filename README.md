@@ -1,187 +1,173 @@
-# Reachy Mini Store Assistant
+# Reachy Recognizer
 
-**Computer Vision + AI for Store Inventory Management** - An intelligent store assistant system that uses the Reachy Mini robot with edge AI (Raspberry Pi 5 + Hailo-8L) for privacy-first inventory analysis and staff interaction.
+**Face Recognition System for Reachy Mini Robot** - A human-aware AI companion that recognizes and greets people using computer vision, running on Raspberry Pi with cross-platform development support.
 
-## 🎯 Project Status: **PLANNING COMPLETE** ✅
+## 🎯 Project Status: **FACE RECOGNITION WORKING** ✅
 
-**PRD & Architecture Ready** - Ready for Week 1 implementation
-- ✅ Complete PRD with Top 3 quick-win features
-- ✅ Brainstorming session results (26+ features, SCAMPER techniques)
-- ✅ Hailo PoC documentation and test scripts
-- ✅ Demo project archived
-- ⏳ Week 1: Multi-Angle Capture System (NEXT)
-- ⏳ Weeks 2-3: Uniform Recognition + Gesture Controls
-- ⏳ Week 4: Integration & Store Pilot
+**Core System Operational**
+- ✅ Face detection, encoding, and recognition pipeline
+- ✅ Face database management with add/update/delete
+- ✅ Cross-platform support (Windows dev, Linux Pi deployment)
+- ✅ Reachy camera integration (direct SDK access)
+- ✅ Real-time recognition test script
+- ✅ Raspberry Pi setup automation
+- 🚧 Full integration with behaviors and voice (in progress)
 
 ## Overview
 
-Reachy Mini Store Assistant is an edge AI system for convenience stores that prioritizes privacy while providing intelligent inventory management and staff interaction capabilities.
+Reachy Recognizer is a face recognition system for the Reachy Mini robot that enables human-aware interactions. The system detects, encodes, and recognizes faces in real-time using OpenCV's SFace model, storing face encodings (not images) for privacy.
 
-### 🎭 Core Features (MVP - 4 weeks)
+### ✨ Current Features
 
-**1. Multi-Angle Capture System** (Week 1)
-- Robot head automatically captures 3-5 angles of cigarette shelves
-- Eliminates glare and occlusion on shiny packaging
-- Frame quality assessment and best-frame selection
-- 90%+ successful pack identification
+**1. Face Recognition Pipeline**
+- Real-time face detection using Haar Cascade (fast on Pi)
+- Face encoding with OpenCV SFace model (128-D embeddings)
+- Face matching with configurable similarity threshold
+- JSON-based face database (embeddings only, no images stored)
 
-**2. Uniform Recognition System** (Weeks 2-3)
-- Privacy-friendly staff vs customer identification
-- Color-pattern detection (no face recognition)
-- 85%+ classification accuracy
-- No PII storage - embeddings only
+**2. Cross-Platform Development**
+- **Windows**: Development environment with webcam testing
+- **Raspberry Pi**: Production deployment with Reachy camera
+- Automatic platform detection and Qt backend configuration
+- Git-based deployment workflow
 
-**3. Gesture Control System** (Weeks 2-3)
-- Fast interaction: 👍 Approve, 👋 Skip, ✋ Stop
-- MediaPipe hand detection on Raspberry Pi 5
-- <1 second response time
-- 95%+ gesture recognition rate
+**3. Face Database Management**
+- Add faces via camera capture (`add_face.py`)
+- Automatic face detection and encoding
+- Preview window with visual feedback
+- Support for both webcam and Reachy camera
 
-### 🚀 Key Principles
-- **Privacy-First**: Embeddings only, no face recognition or photo storage
-- **Quick Wins**: 4-week MVP timeline with practical features
-- **Edge AI**: Raspberry Pi 5 + Hailo-8L AI HAT (26 TOPS)
-- **Store Ready**: Convenience store deployment for tobacco inventory
+**4. Real-Time Testing**
+- Live recognition with confidence scores (`test_face_recognition.py`)
+- FPS monitoring and performance stats
+- Visual bounding boxes with name labels
+- Green for recognized, red for unknown
+
+### 🚀 Key Design Principles
+- **Privacy-First**: Store face encodings only, never images
+- **Cross-Platform**: Develop on Windows, deploy to Pi
+- **Simple Workflow**: Git push/pull between dev and production
+- **Modular Architecture**: Clean separation of vision components
 
 ## Quick Start
 
 ### Prerequisites
 
-- **Python 3.11+** (3.12 recommended)
-- **Reachy Mini** (physical robot, tethered version)
-- **Raspberry Pi 5** (8GB RAM recommended)
-- **Hailo-8L AI HAT** (26 TOPS AI accelerator)
-- **Camera** (Reachy built-in camera)
+- **Python 3.10+** (3.12 recommended)
+- **Reachy Mini Robot** (optional - can develop with webcam only)
+- **Raspberry Pi 4/5** (for production deployment with Reachy)
+- **Camera** (Webcam for development, Reachy camera for deployment)
 
 ### Installation
+
+#### Windows (Development)
+
+1. **Clone the repository:**
+   ```powershell
+   git clone https://github.com/chelleboyer/reachy-recognizer.git
+   cd reachy-recognizer
+   ```
+
+2. **Set up environment:**
+   ```powershell
+   .\start_dev.ps1
+   # This will:
+   # - Create/activate virtual environment
+   # - Install missing packages
+   # - Set environment variables
+   ```
+
+3. **Download face recognition model:**
+   ```powershell
+   mkdir models
+   # Download SFace model (see models/README.md for link)
+   ```
+
+#### Raspberry Pi (Production)
 
 1. **Clone the repository:**
    ```bash
    git clone https://github.com/chelleboyer/reachy-recognizer.git
-   cd reachy-mini-dev
+   cd reachy-recognizer
    ```
 
-2. **Set up Raspberry Pi 5 + Hailo:**
-   Follow the complete setup guide:
+2. **Run automated setup:**
    ```bash
-   # See hailo_poc/ for detailed instructions
-   cd hailo_poc
-   cat QUICK_START.md
+   ./setup_pi.sh
+   # This will:
+   # - Install system dependencies (opencv, numpy, etc.)
+   # - Create virtual environment
+   # - Install Python packages from requirements-pi.txt
+   # - Download face recognition model
+   # - Configure system
    ```
 
-3. **Install Hailo software:**
+   Or manually:
    ```bash
-   # On Raspberry Pi 5
-   git clone https://github.com/hailo-ai/hailo-rpi5-examples.git
-   cd hailo-rpi5-examples
-   ./install.sh
-   ```
-
-4. **Install Python dependencies:**
-   ```bash
-   # Core packages
-   pip install opencv-python mediapipe scikit-image pyyaml
-   
-   # Reachy SDK
-   pip install reachy-mini
-   
-   # Hailo integration
-   pip install hailo_platform
-   ```
-
-5. **Download YOLO model:**
-   ```bash
-   # Get YOLOv8 nano model for Hailo (.hef format)
-   # See hailo_poc/MANUAL_MODEL_DOWNLOAD.md for instructions
+   source ./start_dev.sh
+   pip install -r requirements-pi.txt
    ```
 
 ### Running the System
 
-#### Option 1: Full Face Recognition & Greeting System (Recommended)
+#### Step 1: Add Faces to Database
 
-**Complete system with face recognition, greetings, and coordinated behaviors:**
+Before testing recognition, add at least one face:
 
-1. **Start the Reachy simulator** (optional - skip if no robot):
-   ```bash
-   # Windows PowerShell
-   uvx --from reachy-mini[mujoco] reachy-mini-daemon --sim
-   
-   # macOS/Linux
-   uvx --from 'reachy-mini[mujoco]' reachy-mini-daemon --sim
-   ```
-   
-   Or disable robot movements in `src/config/config.yaml`:
-   ```yaml
-   behaviors:
-     enable_robot: false
-   ```
+**On Windows (Webcam):**
+```powershell
+python add_face.py "YourName"
+```
 
-2. **Run the main system:**
-   ```bash
-   python main.py
-   ```
+**On Raspberry Pi (Reachy Camera):**
+```bash
+# Make sure daemon is running first
+reachy-mini-daemon
+# Or use helper script: ./start_daemon.sh
+
+# Then add face
+python add_face.py "YourName" --reachy
+```
 
 **What it does:**
-- Initializes all subsystems (vision, events, behaviors, voice, coordination)
-- Loads face database from `data/faces.json`
-- Continuously monitors camera for faces
-- Greets recognized people by name with gestures and Shimmer voice
-- Displays camera feed with detection boxes and confidence scores
-- Logs all events and performance metrics
+- Opens camera preview window
+- Detects your face automatically
+- Press SPACE to capture when face is clearly visible
+- Saves encoding to `data/faces.json`
+- Press ESC to cancel
 
-**Controls:**
-- Press `Ctrl+C` to stop
-- Press `q` in the camera window to exit
+#### Step 2: Test Face Recognition
 
-#### Option 2: Voice Conversation Demo
+**Real-time recognition test:**
 
-**Interactive voice conversation with continuous movements:**
-
-1. **Start the Reachy simulator** (if using robot movements)
-
-2. **Run the voice demo:**
-   ```bash
-   python voice_demo.py
-   ```
-   
-   Enter your name when prompted, then start talking!
-
-**Features:**
-- Speech-to-text using Whisper API
-- Conversational AI with GPT-4o-mini
-- Text-to-speech with Shimmer voice (1.15x speed)
-- Continuous head movements and tilts
-- Natural idle antenna drifts (every 0.8s)
-
-**Exit:** Say "goodbye" or "bye"
-
-#### Option 3: Comprehensive System Demo
-
-**Full demonstration with statistics and benchmarking:**
-
-```bash
-python demo.py --duration 60
+**On Windows (Webcam):**
+```powershell
+python test_face_recognition.py
 ```
 
-**Options:**
-- `--duration N`: Run for N seconds (default: 60)
-- `--no-display`: Run without camera window
-- `--benchmark`: Include detailed performance metrics
-
-#### Option 4: Add More Faces to Database
-
-**Capture and store faces for recognition:**
-
+**On Raspberry Pi (Reachy Camera):**
 ```bash
-python add_face.py
+python test_face_recognition.py --reachy
 ```
 
-**Process:**
-- Camera opens with live preview
-- Face is automatically detected
-- Enter person's name when prompted
-- Face encoding is saved to `data/faces.json`
-- Visual feedback during capture
+**What it does:**
+- Shows live video with face detection boxes
+- Displays recognized names with confidence scores
+- Shows FPS and performance stats
+- Green boxes for recognized faces
+- Red boxes for unknown faces
+- Press ESC to exit and see summary
+
+#### Optional: Full Integration Demo
+
+**Note:** Currently requires additional packages not in standard deployment.
+
+```bash
+# If you have the full conversation app installed:
+python main.py        # Complete system with greetings
+python demo.py        # Comprehensive demo
+python voice_demo.py  # Voice conversation
+```
 
 ## System Architecture
 
@@ -225,78 +211,87 @@ python add_face.py
 - **Config** (`src/config/`): YAML configuration management
 - **Logging** (`src/logging/`): Structured JSON logging
 
-## Performance Metrics
+## Performance
 
-- **Face Recognition**: 95-98% confidence on known faces
-- **Recognition Speed**: 30 FPS with every-frame processing
-- **Greeting Coordination**: ~4.9s total (3ms initial response)
-- **Voice Response Time**: <1s for conversation (optimized)
-- **TTS Generation**: ~1.3-2.0s (OpenAI Shimmer voice)
-- **STT Transcription**: ~0.7-2.6s (Whisper API)
-- **LLM Response**: ~1s (GPT-4o-mini, 35 tokens)
+### Face Recognition
+
+- **Detection Speed**: 20-30ms per frame (Haar Cascade on Pi)
+- **Encoding Speed**: 30-40ms per face (SFace ONNX on Pi)
+- **Recognition Speed**: <1ms per face (cosine similarity)
+- **Overall FPS**: 15-20 FPS on Raspberry Pi 5
+- **Confidence**: 0.5-0.8 threshold (configurable)
+
+### Platform Performance
+
+| Platform | Detection | Encoding | FPS |
+|----------|-----------|----------|-----|
+| Desktop PC | 5-10ms | 10-15ms | 40-60 |
+| Raspberry Pi 5 | 20-30ms | 30-40ms | 15-20 |
+| Raspberry Pi 4 | 60-100ms | 100-150ms | 4-6 |
 
 ## Configuration
 
-All system parameters are configurable via `src/config/config.yaml`:
+System parameters in `src/config/config.yaml`:
 
 ```yaml
+robot:
+  enable_robot: false  # Set to true when robot is connected
+  port: /dev/ttyACM0
+  
 camera:
-  device_id: 0
+  source: 0           # 0 for webcam, adjust for Pi Camera
+  width: 640
+  height: 480
   fps: 30
   
 face_recognition:
-  threshold: 0.6
-  
-events:
-  debounce_seconds: 3.0
-  departed_threshold_seconds: 3.0
-  
-behaviors:
-  enable_robot: true
-  gesture_speech_delay: 0.3
-  
-tts:
-  use_enhanced_voice: true
-  default_voice: "shimmer"
-  
-greetings:
-  personality: "warm"
-  repetition_window: 5
+  threshold: 0.5      # Lower = more strict matching
+  detection_interval_frames: 5  # Process every Nth frame (performance)
 ```
 
-See `docs/CONFIGURATION.md` for full details.
+Face recognition model configuration in `src/vision/face_encoder.py`:
+- Model: SFace (OpenCV Zoo)
+- Encoding dimension: 128-D
+- Input size: 112x112 pixels
+- Distance metric: Cosine similarity
 
 ## Project Structure
 
 ```
-reachy-mini-dev/
-├── src/                      # Main source code (modular architecture)
-│   ├── vision/              # Camera, detection, encoding, recognition
-│   ├── events/              # Event system with debouncing
-│   ├── behaviors/           # Robot movements and idle behaviors
-│   ├── voice/               # TTS, greeting selection, adaptive voice
-│   ├── conversation/        # Speech-to-text and LLM conversation
-│   ├── coordination/        # Greeting coordinator
-│   ├── config/              # Configuration loader and settings
-│   └── logging/             # Structured JSON logging
-├── docs/                     # Documentation and project management
-│   ├── prd.md               # Product Requirements Document
-│   ├── epics.md             # Epic breakdown with 16 stories
-│   ├── stories/             # Individual story implementation files
-│   ├── CONFIGURATION.md     # Configuration guide
-│   ├── PROJECT_STRUCTURE.md # Architecture documentation
-│   └── voice-response-design.md # Voice system design
-├── tests/                    # Test suite (all stories validated)
-├── archive/                  # Archived demo and test files
-├── data/                     # Face database (faces.json)
-├── logs/                     # Performance and event logs
-├── models/                   # Face recognition models
-├── scenes/                   # MuJoCo simulation scenes
-├── main.py                  # Main application entry point
-├── voice_demo.py            # Voice conversation demo
-├── demo.py                  # Comprehensive system demo
-├── add_face.py              # Face database management utility
-└── pyproject.toml          # Dependency configuration
+reachy-recognizer/
+├── src/                          # Main source code
+│   ├── vision/                   # Face recognition pipeline
+│   │   ├── face_detector.py     # Haar Cascade face detection
+│   │   ├── face_encoder.py      # SFace encoding (128-D)
+│   │   ├── face_database.py     # JSON face storage
+│   │   ├── face_recognizer.py   # Face matching logic
+│   │   └── recognition_pipeline.py  # Complete pipeline
+│   ├── config/                   # Configuration management
+│   │   ├── config.yaml          # Main config file
+│   │   └── config_loader.py     # Config utilities
+│   ├── behaviors/                # Robot movement coordination
+│   ├── events/                   # Event system
+│   ├── voice/                    # TTS/voice systems
+│   ├── conversation/             # STT/LLM integration
+│   └── logging/                  # Structured logging
+├── docs/                         # Documentation
+│   ├── RASPBERRY_PI_SETUP.md    # Pi deployment guide
+│   ├── PI_QUICK_START.md        # Quick Pi setup
+│   ├── CONFIGURATION.md         # Config reference
+│   └── PROJECT_STRUCTURE.md     # Architecture docs
+├── data/                         # Face database
+│   └── faces.json               # Stored face encodings
+├── models/                       # Face recognition models
+│   └── face_recognition_sface_2021dec.onnx
+├── tests/                        # Test suite
+├── add_face.py                  # Add faces to database
+├── test_face_recognition.py     # Real-time recognition test
+├── requirements.txt             # Python dependencies (Windows)
+├── requirements-pi.txt          # Python dependencies (Raspberry Pi)
+├── setup_pi.sh                  # Automated Pi setup
+├── start_dev.sh / .ps1          # Dev environment setup
+├── start_daemon.sh / .ps1       # Start Reachy daemon
+└── quick_test.sh / .ps1         # Quick system tests
 ```
 
 ## Development
@@ -305,52 +300,103 @@ See [docs/SETUP.md](docs/SETUP.md) for detailed development environment setup in
 
 ### Key Dependencies
 
-- **reachy-mini**: Robot SDK with MuJoCo simulation support (>=1.0.0rc5)
-- **opencv-python**: Computer vision and camera input (>=4.8.0)
-- **face-recognition**: Face detection and recognition (>=1.3.0)
-- **openai**: OpenAI API for TTS, STT, and LLM (>=1.0.0)
-- **pygame**: Audio playback for MP3 files (>=2.5.0)
-- **pyaudio**: Microphone input for voice conversations
+- **opencv-python**: Face detection and image processing (>=4.8.0)
+- **numpy**: Array operations for encodings (>=1.24.0)
 - **pyyaml**: Configuration file parsing (>=6.0)
-- **python-dotenv**: Environment variable management
+- **reachy-mini**: Robot SDK (>=1.0.0rc5) - optional, for robot integration
 
-### Running Tests
+**Note**: This project uses OpenCV's SFace model, NOT the `face-recognition` library. SFace works better on Raspberry Pi (no dlib/CMake required).
 
-```bash
-# Run all tests
-pytest tests/
+### Development Workflow
 
-# Run specific story tests
-pytest tests/test_story_1_1_setup.py
-pytest tests/test_story_4_3_integration.py
-```
+#### Windows to Pi Deployment
+
+1. **Develop on Windows:**
+   ```powershell
+   # Edit code, test with webcam
+   python add_face.py "Test"
+   python test_face_recognition.py
+   
+   # Commit and push
+   git add .
+   git commit -m "Your changes"
+   git push origin main
+   ```
+
+2. **Deploy to Pi:**
+   ```bash
+   # On Raspberry Pi
+   cd ~/reachy-recognizer
+   git pull
+   
+   # Test with Reachy
+   python add_face.py "Person" --reachy
+   python test_face_recognition.py --reachy
+   ```
+
+### Helper Scripts
+
+- **`start_dev.sh/.ps1`**: Setup development environment
+  - Auto-detects/creates virtual environment
+  - Installs missing packages
+  - Sets environment variables
+  - Platform-aware (uses requirements-pi.txt on Pi)
+
+- **`start_daemon.sh/.ps1`**: Start Reachy daemon
+  - Checks for reachy-mini SDK
+  - Lists available serial ports
+  - Starts daemon with proper config
+
+- **`setup_pi.sh`**: One-command Pi setup
+  - Installs system dependencies
+  - Creates virtual environment
+  - Downloads face recognition model
+  - Verifies installation
 
 ## Documentation
 
-### New Store Deployment Project
-- **[Product Requirements](docs/prd.md)**: Complete PRD for store assistant with Top 3 features
-- **[Brainstorming Results](docs/brainstorming-session-results-2025-11-02.md)**: 26+ features from SCAMPER session
-- **[Workflow Status](docs/bmm-workflow-status.md)**: Current project status and next steps
-- **[Hailo PoC Status](hailo_poc/STATUS.md)**: Hardware setup and testing status
-- **[Setup Guide](docs/SETUP.md)**: Development environment setup
-
-### Demo Project Archive
-- **[Demo Archive](docs/demo-archive/)**: Original face recognition demo project documentation
-- **[Demo PRD](docs/demo-archive/prd.md)**: Original Reachy Recognizer PRD
-- **[Demo Epics](docs/demo-archive/epics.md)**: 16 stories across 4 epics (completed demo)
+- **[Raspberry Pi Setup Guide](docs/RASPBERRY_PI_SETUP.md)**: Complete Pi deployment instructions
+- **[Quick Start for Pi](PI_QUICK_START.md)**: Condensed Pi setup guide
+- **[Configuration Guide](docs/CONFIGURATION.md)**: All configuration options
+- **[Project Structure](docs/PROJECT_STRUCTURE.md)**: Architecture and module organization
+- **[Model Download Guide](models/README.md)**: How to get face recognition models
 
 ## Architecture
 
-The system is organized into 8 main subsystems under `src/`:
+### Core Vision Pipeline
 
-1. **Vision System** (`src/vision/`): Camera interface, face detection, encoding, recognition pipeline
-2. **Event System** (`src/events/`): Recognition event management with debouncing
-3. **Behavior System** (`src/behaviors/`): Robot movement coordination and idle behaviors  
-4. **Voice System** (`src/voice/`): Multi-backend TTS, greeting selection, adaptive voice (OpenAI Shimmer)
-5. **Conversation System** (`src/conversation/`): Speech-to-text (Whisper) and LLM conversation (GPT-4o-mini)
-6. **Coordination** (`src/coordination/`): Greeting coordinator integrating all subsystems
-7. **Configuration** (`src/config/`): YAML-based centralized settings management
-8. **Logging** (`src/logging/`): Structured JSON logging with performance metrics
+```
+Camera → Face Detector → Face Encoder → Face Recognizer
+                ↓              ↓              ↓
+           (Locations)    (128-D vector)   (Name + Confidence)
+```
+
+**Components:**
+
+1. **Face Detector** (`face_detector.py`)
+   - Haar Cascade for fast detection
+   - Returns face bounding boxes (top, right, bottom, left)
+   - Optimized for real-time performance on Pi
+
+2. **Face Encoder** (`face_encoder.py`)
+   - OpenCV SFace model (ONNX)
+   - Generates 128-dimensional embeddings
+   - L2-normalized for cosine similarity
+
+3. **Face Database** (`face_database.py`)
+   - JSON storage of face encodings
+   - Add, update, delete, search operations
+   - No images stored (privacy-first)
+
+4. **Face Recognizer** (`face_recognizer.py`)
+   - Cosine similarity matching
+   - Configurable confidence threshold
+   - Returns name + confidence score
+
+5. **Recognition Pipeline** (`recognition_pipeline.py`)
+   - Complete end-to-end processing
+   - Multi-face handling
+   - Event generation for integration
 
 ## Contributing
 
@@ -365,23 +411,57 @@ This project follows the BMAD (Business Method Agile Development) workflow for s
 
 See LICENSE files in respective subdirectories.
 
-## Project Pivot
+## Why SFace Instead of face-recognition?
 
-This project evolved from **Reachy Recognizer** (face recognition demo) to **Reachy Mini Store Assistant** (store deployment system):
+This project uses **OpenCV's SFace model** instead of the popular `face-recognition` library:
 
-### What Changed
-- **From:** Simulation-based face recognition demo
-- **To:** Privacy-first store inventory and staff interaction system
-- **Why:** Real-world deployment needs, privacy requirements, quick-win focus
+### Advantages
+- ✅ **No CMake required**: Pure Python dependencies
+- ✅ **Raspberry Pi friendly**: No dlib compilation issues
+- ✅ **Fast on ARM**: ONNX runtime optimized for ARM64
+- ✅ **Small model size**: ~10MB vs 100MB+ for face-recognition models
+- ✅ **Compatible format**: 128-D embeddings like face-recognition
 
-### What Was Preserved
-- Core infrastructure (event system, behavior coordination, configuration)
-- Reachy SDK integration
-- Testing patterns
-- Development workflow
+### Trade-offs
+- Slightly lower accuracy than face-recognition (but adequate for most use cases)
+- Requires manual model download (automated in setup scripts)
 
-### Demo Project Status
-The original Reachy Recognizer demo (face recognition system) is **100% complete** with all 16 stories implemented. Documentation archived in `docs/demo-archive/`.
+### For Production
+The SFace approach is better for embedded deployment on Raspberry Pi, which is why this project uses it.
+
+## Troubleshooting
+
+### "Qt platform plugin" error
+- **Fixed automatically** - scripts detect platform and set correct Qt backend
+- Windows: `QT_QPA_PLATFORM=windows`
+- Linux: `QT_QPA_PLATFORM=xcb`
+
+### "Reachy SDK not available"
+```bash
+# On Pi, install reachy-mini
+pip install reachy-mini
+
+# Or use requirements file
+pip install -r requirements-pi.txt
+```
+
+### "Model file not found"
+```bash
+# Download SFace model
+wget -O models/face_recognition_sface_2021dec.onnx \
+  https://github.com/opencv/opencv_zoo/raw/main/models/face_recognition_sface/face_recognition_sface_2021dec.onnx
+```
+
+### Camera not working on Pi
+```bash
+# Check camera
+libcamera-hello  # For Pi Camera
+v4l2-ctl --list-devices  # For USB camera
+
+# Check permissions
+sudo usermod -a -G video $USER
+# Logout and login again
+```
 
 ## Contact
 
@@ -390,34 +470,10 @@ The original Reachy Recognizer demo (face recognition system) is **100% complete
 
 ---
 
-**Current Project Status**: ✅ **PLANNING COMPLETE** - Ready for Week 1 implementation!
+**Current Status**: ✅ **Face Recognition Working!**
 
-- ✅ **Phase 0: Discovery & Planning**
-  - Brainstorming session (SCAMPER) - 26+ features
-  - Feature prioritization
-  - PRD creation with 4-week timeline
-  - Hailo PoC documentation
-  - Demo project archived
-
-- ⏳ **Epic 1: Multi-Angle Capture System** (Week 1 - NEXT)
-  - Story 1.1: Basic Multi-Angle Head Movement (5 pts)
-  - Story 1.2: Frame Quality Assessment (8 pts)
-  - Story 1.3: Best Frame Selection & OCR (8 pts)
-
-- ⏳ **Epic 2: Uniform Recognition System** (Weeks 2-3)
-  - Story 2.1: Person Detection with Torso ROI (5 pts)
-  - Story 2.2: Color-Pattern Feature Extraction (5 pts)
-  - Story 2.3: Staff vs Customer Classification (13 pts)
-
-- ⏳ **Epic 3: Gesture Control System** (Weeks 2-3)
-  - Story 3.1: MediaPipe Hand Detection Setup (3 pts)
-  - Story 3.2: Three-Gesture Recognition (13 pts)
-  - Story 3.3: Gesture-to-Command Mapping (5 pts)
-  - Story 3.4: Visual Feedback & UI Integration (5 pts)
-
-- ⏳ **Epic 4: Integration & Testing** (Week 4)
-  - Story 4.1: End-to-End Integration Testing
-  - Story 4.2: Store Pilot Deployment Prep
-  - Story 4.3: Performance Optimization & Documentation
-
-**Next Milestone**: Week 1 - Multi-Angle Capture working! 🚀
+- ✅ Face detection, encoding, recognition
+- ✅ Cross-platform development workflow
+- ✅ Raspberry Pi deployment automation
+- ✅ Reachy camera integration
+- 🚧 Full robot behavior integration (in progress)
