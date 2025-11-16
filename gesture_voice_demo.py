@@ -42,7 +42,9 @@ from src.vision.gesture_recognizer import GestureRecognizer, GestureType
 from src.coordination.gesture_coordinator import GestureCoordinator, GestureCommand, GestureEvent
 from src.events.event_system import EventManager, EventType
 from src.voice.adaptive_tts_manager import AdaptiveTTSManager
+from src.voice.greeting_selector import GreetingTemplate
 from src.behaviors.behavior_module import BehaviorManager
+import asyncio
 
 
 def is_raspberry_pi() -> bool:
@@ -174,7 +176,7 @@ def main():
     # Register callback for gesture events
     thumbs_up_count = 0
     
-    def on_gesture_detected(gesture_event: GestureEvent):
+    def on_gesture_detected(gesture_event):
         """Handle gesture detection event."""
         nonlocal thumbs_up_count
         
@@ -200,11 +202,14 @@ def main():
             if tts:
                 try:
                     print("   🗣️  Speaking: 'You got it boss!'")
-                    tts.speak_async(
-                        "You got it boss!",
-                        voice="nova",  # Male voice
-                        speed=1.0
+                    # Create a simple greeting template
+                    template = GreetingTemplate(
+                        text="You got it boss!",
+                        emotion="excited",
+                        energy_level=4
                     )
+                    # Speak using async method
+                    asyncio.run(tts.speak_greeting(template))
                 except Exception as e:
                     print(f"   ⚠️  Speech failed: {e}")
         
@@ -212,7 +217,12 @@ def main():
             print("👋 Wave detected!")
             if tts:
                 try:
-                    tts.speak_async("Hello there!", voice="nova")
+                    template = GreetingTemplate(
+                        text="Hello there!",
+                        emotion="playful",
+                        energy_level=3
+                    )
+                    asyncio.run(tts.speak_greeting(template))
                 except:
                     pass
         
@@ -220,7 +230,12 @@ def main():
             print("✋ Palm stop detected!")
             if tts:
                 try:
-                    tts.speak_async("Okay, I'll wait", voice="nova")
+                    template = GreetingTemplate(
+                        text="Okay, I'll wait",
+                        emotion="calm",
+                        energy_level=2
+                    )
+                    asyncio.run(tts.speak_greeting(template))
                 except:
                     pass
     
