@@ -392,13 +392,16 @@ def main():
         try:
             from reachy_mini import ReachyMini
             reachy = ReachyMini()
+            print("✓ Reachy connected")
             
             # Initialize behavior manager immediately for responsive movements
             try:
-                behavior_manager = BehaviorManager(enable_robot=True)
+                behavior_manager = BehaviorManager(reachy=reachy, enable_robot=True)
                 print("✓ Behavior manager ready")
             except Exception as e:
                 print(f"⚠️  Behavior manager failed: {e}")
+                import traceback
+                traceback.print_exc()
             
             # Test camera
             frame_data = reachy.media.get_frame()
@@ -531,12 +534,17 @@ def main():
                         
                         # IMMEDIATE RESPONSE: Quick head nod acknowledgment
                         if behavior_manager and behavior_manager.reachy:
+                            print("   🤖 Quick acknowledgment nod")
                             def quick_acknowledge():
                                 try:
-                                    behavior_manager.execute_behavior(look_at_person)
-                                except:
-                                    pass
+                                    result = behavior_manager.execute_behavior(look_at_person)
+                                    if not result:
+                                        print("   ⚠️  Acknowledgment behavior blocked")
+                                except Exception as e:
+                                    print(f"   ⚠️  Acknowledgment failed: {e}")
                             threading.Thread(target=quick_acknowledge, daemon=True).start()
+                        else:
+                            print(f"   ⚠️  Behavior manager not ready (mgr={behavior_manager is not None}, reachy={behavior_manager.reachy if behavior_manager else None})")
                     
                     elif current_time - person_detected_time >= person_present_threshold:
                         # Person has been present long enough - greet them!
@@ -546,11 +554,12 @@ def main():
                         
                         # Wave gesture IMMEDIATELY (before speech)
                         if behavior_manager and behavior_manager.reachy:
+                            print("   👋 Greeting wave")
                             def wave_now():
                                 try:
                                     behavior_manager.execute_behavior(greeting_wave)
-                                except:
-                                    pass
+                                except Exception as e:
+                                    print(f"   ⚠️  Wave failed: {e}")
                             threading.Thread(target=wave_now, daemon=True).start()
                         
                         # Generate and speak greeting
@@ -598,11 +607,12 @@ def main():
                         
                         # IMMEDIATE RESPONSE: Head tilt/nod to show listening
                         if behavior_manager and behavior_manager.reachy:
+                            print("   🤔 Thinking look")
                             def show_listening():
                                 try:
                                     behavior_manager.execute_behavior(thinking_look)
-                                except:
-                                    pass
+                                except Exception as e:
+                                    print(f"   ⚠️  Thinking look failed: {e}")
                             threading.Thread(target=show_listening, daemon=True).start()
                         
                         # Get GPT-4 response with thinking animation
