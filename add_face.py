@@ -210,8 +210,23 @@ if __name__ == "__main__":
                        help='Use Reachy camera instead of webcam')
     parser.add_argument('--remote', action='store_true',
                        help='Connect to remote Reachy (not localhost). Requires daemon running with --no-localhost-only')
+    parser.add_argument('--webcam', action='store_true',
+                       help='Force webcam even on Raspberry Pi')
     
     args = parser.parse_args()
+    
+    # Auto-detect Raspberry Pi and use Reachy camera by default
+    use_reachy = args.reachy
+    if not args.webcam and not use_reachy:
+        try:
+            # Check if running on Raspberry Pi
+            with open('/proc/device-tree/model', 'r') as f:
+                if 'Raspberry Pi' in f.read():
+                    print("🔍 Detected Raspberry Pi - using Reachy camera by default")
+                    print("   (use --webcam to force webcam instead)")
+                    use_reachy = True
+        except:
+            pass  # Not on Pi, use webcam
     
     name = args.name
     if not name:
@@ -221,5 +236,5 @@ if __name__ == "__main__":
             print("❌ Name cannot be empty")
             sys.exit(1)
     
-    success = capture_and_add_face(name, use_reachy=args.reachy, reachy_remote=args.remote)
+    success = capture_and_add_face(name, use_reachy=use_reachy, reachy_remote=args.remote)
     sys.exit(0 if success else 1)
