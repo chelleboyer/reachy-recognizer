@@ -6,19 +6,19 @@ Captures a photo from webcam or Reachy camera and adds it with a name.
 import os
 import sys
 import time
+import platform
 from pathlib import Path
 
-# Fix OpenCV Qt platform plugin error on Windows
-os.environ["OPENCV_VIDEOIO_PRIORITY_MSMF"] = "0"
-os.environ["QT_QPA_PLATFORM_PLUGIN_PATH"] = ""
-os.environ["QT_QPA_PLATFORM"] = "windows"  # Force Windows platform
-# Disable Qt plugins to use native Windows display
-os.environ["OPENCV_VIDEOIO_DEBUG"] = "1"
+# Fix OpenCV platform issues based on OS
+if platform.system() == "Windows":
+    os.environ["OPENCV_VIDEOIO_PRIORITY_MSMF"] = "0"
+    os.environ["QT_QPA_PLATFORM"] = "windows"
+elif platform.system() == "Linux":
+    os.environ["QT_QPA_PLATFORM"] = "xcb"
+elif platform.system() == "Darwin":  # macOS
+    os.environ["QT_QPA_PLATFORM"] = "cocoa"
 
 import cv2
-
-# Force OpenCV to use HighGUI without Qt
-cv2.setNumThreads(1)
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent))
