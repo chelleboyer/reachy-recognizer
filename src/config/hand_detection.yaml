@@ -8,8 +8,8 @@
 mediapipe:
   # Model complexity: 0 (lite), 1 (full)
   # Higher complexity = better accuracy but slower processing
-  # Default: 1 for balanced accuracy/performance
-  model_complexity: 1
+  # Default: 0 for Pi5 - faster processing with minimal accuracy loss
+  model_complexity: 0
   
   # Minimum confidence for hand detection (0.0-1.0)
   # Lower values = more detections but more false positives
@@ -34,13 +34,13 @@ mediapipe:
 performance:
   # Target frames per second (10-30)
   # Must be >= 10 FPS for responsive interaction
-  # Default: 15 FPS for balance between responsiveness and CPU usage
-  target_fps: 15
+  # Default: 20 FPS for Pi5 with model_complexity=0
+  target_fps: 20
   
   # Maximum latency in milliseconds (0-100)
   # Maximum acceptable delay for hand detection
-  # Default: 66ms (~15 FPS equivalent)
-  max_latency_ms: 66
+  # Default: 50ms (~20 FPS equivalent)
+  max_latency_ms: 50
   
   # Enable performance logging (true/false)
   # Logs FPS, detection counts, and latency metrics

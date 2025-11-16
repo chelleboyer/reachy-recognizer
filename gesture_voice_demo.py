@@ -107,6 +107,26 @@ def main():
         '--camera-index', type=int, default=0,
         help='Webcam index (default: 0)'
     )
+    parser.add_argument(
+        '--headless', action='store_true',
+        help='Run without display window (for remote/SSH operation)'
+    )
+    parser.add_argument(
+        '--frame-skip', type=int, default=0,
+        help='Process every Nth frame (0=all frames, 1=every other frame, etc.)'
+    )
+    parser.add_argument(
+        '--display-scale', type=float, default=0.5,
+        help='Scale display window (0.5 = half size, default: 0.5 for Pi5 performance)'
+    )
+    parser.add_argument(
+        '--no-voice', action='store_true',
+        help='Disable voice synthesis (for testing/performance)'
+    )
+    parser.add_argument(
+        '--benchmark', action='store_true',
+        help='Show detailed performance statistics'
+    )
     args = parser.parse_args()
     
     print("=" * 70)
@@ -177,24 +197,28 @@ def main():
         print(f"✗ Failed to initialize gesture coordinator: {e}")
         return 1
     
-    # Initialize TTS manager
-    print("Initializing voice system...")
-    try:
-        tts = AdaptiveTTSManager(enable_caching=True)
-        print("✓ Voice system initialized")
-        
-        # Check which backends are available
-        backends = list(tts.backends.keys())
-        print(f"   Available backends: {[b.value for b in backends]}")
-        if not backends:
-            print("   ⚠️  No TTS backends available!")
+    # Initialize TTS manager (unless disabled)
+    tts = None
+    if not args.no_voice:
+        print("Initializing voice system...")
+        try:
+            tts = AdaptiveTTSManager(enable_caching=True)
+            print("✓ Voice system initialized")
+            
+            # Check which backends are available
+            backends = list(tts.backends.keys())
+            print(f"   Available backends: {[b.value for b in backends]}")
+            if not backends:
+                print("   ⚠️  No TTS backends available!")
+                tts = None
+        except Exception as e:
+            print(f"⚠️  Voice system failed: {e}")
+            import traceback
+            traceback.print_exc()
+            print("Continuing without voice...")
             tts = None
-    except Exception as e:
-        print(f"⚠️  Voice system failed: {e}")
-        import traceback
-        traceback.print_exc()
-        print("Continuing without voice...")
-        tts = None
+    else:
+        print("Voice system disabled (--no-voice)")
     
     # Register callback for gesture events
     thumbs_up_count = 0
@@ -283,16 +307,32 @@ def main():
     print("   - Thumbs Up → 'You got it boss!' + wave")
     print("   - Wave → 'Hello there!'")
     print("   - Palm Stop → 'Okay, I'll wait'")
-    print("\nPress 'q' to quit\n")
+    if not args.headless:
+        print("\nPress 'q' to quit")
+    else:
+        print("\nHeadless mode - press Ctrl+C to quit")
+    if args.frame_skip > 0:
+        print(f"Frame skip: Processing every {args.frame_skip + 1} frame(s)")
+    if args.display_scale != 1.0:
+        print(f"Display scale: {args.display_scale:.1f}x")
+    print()
     
-    # Create display window
+    # Create display window (unless headless)
     window_name = "Gesture Voice Demo"
-    cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
-    cv2.resizeWindow(window_name, 1280, 720)
+    if not args.headless:
+        cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+        # Default 640x480 display, scaled by display_scale
+        display_width = int(640 * args.display_scale)
+        display_height = int(480 * args.display_scale)
+        cv2.resizeWindow(window_name, display_width, display_height)
     
     frame_count = 0
+    processed_count = 0
     fps = 0.0
+    processing_fps = 0.0
     last_fps_time = time.time()
+    total_detect_time = 0.0
+    total_recognize_time = 0.0
     
     try:
         while True:
@@ -311,45 +351,99 @@ def main():
             else:
                 break
             
-            # Process frame through coordinator
-            # This will detect hands, recognize gestures, and emit events
-            gesture_events = coordinator.process_frame(frame)
-            
-            # Draw simple overlay
-            h, w = frame.shape[:2]
-            cv2.putText(
-                frame, f"FPS: {fps:.1f}",
-                (10, 30),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2
-            )
-            cv2.putText(
-                frame, f"Thumbs up count: {thumbs_up_count}",
-                (10, 60),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2
-            )
-            cv2.putText(
-                frame, "Press 'q' to quit",
-                (10, h - 20),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1
-            )
-            
-            # Display frame
-            cv2.imshow(window_name, frame)
-            
-            # Update FPS
             frame_count += 1
+            
+            # Frame skip logic: only process every Nth frame
+            should_process = (args.frame_skip == 0) or (frame_count % (args.frame_skip + 1) == 0)
+            
+            if should_process:
+                # Process frame through coordinator with timing
+                # This will detect hands, recognize gestures, and emit events
+                detect_start = time.time()
+                gesture_events = coordinator.process_frame(frame)
+                detect_time = (time.time() - detect_start) * 1000  # ms
+                
+                total_detect_time += detect_time
+                processed_count += 1
+            
+            # Draw overlay (even on skipped frames for smooth display)
+            if not args.headless:
+                h, w = frame.shape[:2]
+                
+                # Basic info
+                cv2.putText(
+                    frame, f"Capture FPS: {fps:.1f}",
+                    (10, 30),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2
+                )
+                
+                if should_process:
+                    cv2.putText(
+                        frame, f"Processing FPS: {processing_fps:.1f}",
+                        (10, 60),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200, 200, 255), 2
+                    )
+                
+                cv2.putText(
+                    frame, f"Gestures: {thumbs_up_count}",
+                    (10, 90),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2
+                )
+                
+                # Benchmark info if enabled
+                if args.benchmark and processed_count > 0:
+                    avg_detect = total_detect_time / processed_count
+                    cv2.putText(
+                        frame, f"Avg detect: {avg_detect:.1f}ms",
+                        (10, 120),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 200, 0), 1
+                    )
+                    cv2.putText(
+                        frame, f"Processed: {processed_count}/{frame_count}",
+                        (10, 145),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 200, 0), 1
+                    )
+                
+                cv2.putText(
+                    frame, "Press 'q' to quit",
+                    (10, h - 20),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1
+                )
+                
+                # Display frame (resized for performance if needed)
+                if args.display_scale != 1.0:
+                    display_frame = cv2.resize(
+                        frame,
+                        None,
+                        fx=args.display_scale,
+                        fy=args.display_scale,
+                        interpolation=cv2.INTER_LINEAR
+                    )
+                    cv2.imshow(window_name, display_frame)
+                else:
+                    cv2.imshow(window_name, frame)
+            
+            # Update FPS calculations
             if frame_count % 10 == 0:
                 current_time = time.time()
                 elapsed = current_time - last_fps_time
                 if elapsed > 0:
                     fps = 10 / elapsed
+                    if processed_count > 0:
+                        # Processing FPS based on actually processed frames
+                        frames_processed_in_period = 10 // (args.frame_skip + 1) if args.frame_skip > 0 else 10
+                        processing_fps = frames_processed_in_period / elapsed
                     last_fps_time = current_time
             
-            # Handle keyboard input
-            key = cv2.waitKey(1) & 0xFF
-            if key == ord('q'):
-                print("\nQuitting...")
-                break
+            # Handle keyboard input (skip if headless)
+            if not args.headless:
+                key = cv2.waitKey(1) & 0xFF
+                if key == ord('q'):
+                    print("\nQuitting...")
+                    break
+            else:
+                # Small sleep in headless mode to prevent CPU spinning
+                time.sleep(0.01)
     
     except KeyboardInterrupt:
         print("\n\nInterrupted by user")
@@ -363,14 +457,27 @@ def main():
         # Cleanup
         print("\nCleaning up...")
         
-        cv2.destroyAllWindows()
+        if not args.headless:
+            cv2.destroyAllWindows()
         
         if camera:
             camera.release()
         
         detector.close()
         
+        # Print final statistics
         print(f"\n✓ Demo complete - detected {thumbs_up_count} thumbs up gestures")
+        print(f"   Total frames: {frame_count}")
+        print(f"   Processed frames: {processed_count}")
+        if processed_count > 0:
+            print(f"   Average detection time: {total_detect_time / processed_count:.1f}ms")
+        
+        if args.benchmark:
+            stats = detector.get_statistics()
+            print("\n📊 Benchmark Statistics:")
+            print(f"   Hand detector FPS: {stats['fps']:.1f}")
+            print(f"   Detection rate: {stats['detection_rate']:.1f}%")
+            print(f"   Average latency: {stats['avg_latency_ms']:.1f}ms")
     
     return 0
 

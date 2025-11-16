@@ -26,7 +26,8 @@ gestures:
   # Wave Gesture
   wave:
     # Minimum confidence score to register gesture (0.0-1.0)
-    min_confidence: 0.50
+    # Lowered for Pi5 responsiveness
+    min_confidence: 0.45
     
     # Minimum hand movement amplitude (normalized units)
     min_movement_amplitude: 0.08
@@ -35,10 +36,12 @@ gestures:
     max_movement_amplitude: 0.5
     
     # Oscillation detection: minimum number of direction changes
+    # Reduced to 2 for faster detection
     min_direction_changes: 2
     
     # Time window for detecting wave motion (seconds)
-    detection_window: 1.5
+    # Reduced to 1.0s for faster response
+    detection_window: 1.0
     
     # Minimum frequency of hand movement (Hz)
     min_frequency: 1.0
@@ -52,7 +55,8 @@ gestures:
   # Palm Stop Gesture
   palm_stop:
     # Minimum confidence score to register gesture (0.0-1.0)
-    min_confidence: 0.65
+    # Lowered for Pi5 responsiveness
+    min_confidence: 0.60
     
     # All fingers must be extended this much (normalized units)
     min_all_fingers_extension: 0.5
@@ -76,18 +80,19 @@ temporal:
   hold_time: 0.5
   
   # Smoothing window: number of frames to average for confidence
-  smoothing_window: 5
+  # Reduced to 3 for faster response on Pi5
+  smoothing_window: 3
   
   # Confidence decay: how quickly confidence drops when gesture not detected
   # Higher = faster decay (0.0-1.0)
   confidence_decay: 0.3
   
   # Minimum frames gesture must be detected in smoothing window
-  min_detection_frames: 3
+  min_detection_frames: 2
   
   # Cooldown time after gesture recognized (seconds)
-  # Prevents rapid re-triggering
-  gesture_cooldown: 3.0
+  # Reduced to 1s for more responsive interaction
+  gesture_cooldown: 1.0
 
 # Distance Estimation Settings
 distance:
