@@ -689,14 +689,14 @@ class AdaptiveTTSManager:
         )
     
     def _initialize_backends(self):
-        \"\"\"Initialize available TTS backends.\"\"\"
+        """Initialize available TTS backends."""
         # Try OpenAI (primary)
         if OPENAI_AVAILABLE:
             try:
                 self.backends[VoiceBackend.OPENAI_TTS] = OpenAITTSBackend()
-                logger.info(\"\u2713 OpenAI TTS backend available\")
+                logger.info("✓ OpenAI TTS backend available")
             except Exception as e:
-                logger.warning(f\"OpenAI TTS initialization failed: {e}\")
+                logger.warning(f"OpenAI TTS initialization failed: {e}")
         
         # Try Piper (high-quality local) - prioritize if no OpenAI
         if PIPER_AVAILABLE:
@@ -714,9 +714,9 @@ class AdaptiveTTSManager:
         if PYTTSX3_AVAILABLE:
             try:
                 self.backends[VoiceBackend.PYTTSX3] = Pyttsx3Backend()
-                logger.info(\"\u2713 pyttsx3 backend available (fallback)\")
+                logger.info("✓ pyttsx3 backend available (fallback)")
             except Exception as e:
-                logger.warning(f\"pyttsx3 initialization failed: {e}\")
+                logger.warning(f"pyttsx3 initialization failed: {e}")
         
         if not self.backends:
             logger.error("No TTS backends available!")
