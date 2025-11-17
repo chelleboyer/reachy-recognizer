@@ -50,6 +50,16 @@ except ImportError:
     PYTTSX3_AVAILABLE = False
     print("Warning: pyttsx3 not available")
 
+try:
+    from piper import PiperVoice
+    from piper.download import ensure_voice_exists, find_voice, get_voices
+    import wave
+    import io
+    PIPER_AVAILABLE = True
+except ImportError:
+    PIPER_AVAILABLE = False
+    print("Piper TTS not available - install with: pip install piper-tts")
+
 # Audio playback (optional)
 try:
     import pygame
@@ -120,6 +130,7 @@ class VoiceBackend(Enum):
     """Available voice backends in priority order."""
     OPENAI_TTS = "openai"
     AZURE_NEURAL = "azure"
+    PIPER = "piper"  # Local, high-quality TTS
     PYTTSX3 = "pyttsx3"
 
 
@@ -428,6 +439,98 @@ class OpenAITTSBackend:
         return emotion_map.get(template.emotion, self.default_voice)
 
 
+class PiperBackend:
+    """
+    Piper TTS backend - High-quality local TTS.
+    
+    Provides near-OpenAI quality speech synthesis completely offline.
+    Fast, natural-sounding voices with no API costs.
+    """
+    
+    def __init__(
+        self,
+        voice_name: str = "en_US-amy-medium"
+    ):
+        """Initialize Piper TTS backend."""
+        if not PIPER_AVAILABLE:
+            raise ImportError("Piper TTS not available")
+        
+        self.voice_name = voice_name
+        self.voice = None
+        self._load_voice()
+        
+        logger.info(f"Piper TTS backend initialized with voice: {voice_name}")
+    
+    def _load_voice(self):
+        """Load Piper voice model."""
+        try:
+            # Try to find and load the voice
+            voices_info = get_voices(download_dir=str(Path.home() / ".local" / "share" / "piper"), update_voices=False)
+            
+            # Ensure voice exists (download if needed)
+            voice_path, config_path = ensure_voice_exists(
+                self.voice_name,
+                download_dir=str(Path.home() / ".local" / "share" / "piper"),
+                voices_info=voices_info
+            )
+            
+            # Load voice
+            self.voice = PiperVoice.load(voice_path, config_path=config_path)
+            logger.info(f"✓ Piper voice loaded: {self.voice_name}")
+        except Exception as e:
+            logger.error(f"Failed to load Piper voice '{self.voice_name}': {e}")
+            raise
+    
+    async def synthesize(
+        self,
+        template: GreetingTemplate
+    ) -> AudioData:
+        """
+        Generate speech with Piper TTS.
+        
+        Args:
+            template: Greeting template with text
+            
+        Returns:
+            AudioData with generated speech
+        """
+        import asyncio
+        import time
+        
+        start_time = time.time()
+        
+        try:
+            # Generate speech in thread pool (Piper is synchronous)
+            loop = asyncio.get_event_loop()
+            from concurrent.futures import ThreadPoolExecutor
+            
+            def generate():
+                # Synthesize to WAV in memory
+                wav_io = io.BytesIO()
+                
+                with wave.open(wav_io, 'wb') as wav_file:
+                    self.voice.synthesize(template.text, wav_file)
+                
+                return wav_io.getvalue()
+            
+            with ThreadPoolExecutor() as executor:
+                audio_bytes = await loop.run_in_executor(executor, generate)
+            
+            latency = time.time() - start_time
+            
+            return AudioData(
+                data=audio_bytes,
+                format="wav",
+                latency=latency,
+                backend=VoiceBackend.PIPER,
+                cached=False
+            )
+        
+        except Exception as e:
+            logger.error(f"Piper synthesis failed: {e}")
+            raise
+
+
 class Pyttsx3Backend:
     """
     pyttsx3 TTS backend - Local fallback.
@@ -567,22 +670,30 @@ class AdaptiveTTSManager:
         )
     
     def _initialize_backends(self):
-        """Initialize available TTS backends."""
+        \"\"\"Initialize available TTS backends.\"\"\"
         # Try OpenAI (primary)
         if OPENAI_AVAILABLE:
             try:
                 self.backends[VoiceBackend.OPENAI_TTS] = OpenAITTSBackend()
-                logger.info("✓ OpenAI TTS backend available")
+                logger.info(\"\u2713 OpenAI TTS backend available\")
             except Exception as e:
-                logger.warning(f"OpenAI TTS initialization failed: {e}")
+                logger.warning(f\"OpenAI TTS initialization failed: {e}\")
+        
+        # Try Piper (high-quality local)
+        if PIPER_AVAILABLE:
+            try:
+                self.backends[VoiceBackend.PIPER] = PiperBackend()
+                logger.info(\"\u2713 Piper TTS backend available (LOCAL, high-quality)\")
+            except Exception as e:
+                logger.warning(f\"Piper TTS initialization failed: {e}\")
         
         # Try pyttsx3 (fallback)
         if PYTTSX3_AVAILABLE:
             try:
                 self.backends[VoiceBackend.PYTTSX3] = Pyttsx3Backend()
-                logger.info("✓ pyttsx3 backend available (fallback)")
+                logger.info(\"\u2713 pyttsx3 backend available (fallback)\")
             except Exception as e:
-                logger.warning(f"pyttsx3 initialization failed: {e}")
+                logger.warning(f\"pyttsx3 initialization failed: {e}\")
         
         if not self.backends:
             logger.error("No TTS backends available!")
