@@ -464,15 +464,34 @@ class PiperBackend:
     def _load_voice(self):
         """Load Piper voice model."""
         try:
+            download_dir = Path.home() / ".local" / "share" / "piper"
+            download_dir.mkdir(parents=True, exist_ok=True)
+            
+            logger.info(f"Loading Piper voice '{self.voice_name}'...")
+            
             # Try to find and load the voice
-            voices_info = get_voices(download_dir=str(Path.home() / ".local" / "share" / "piper"), update_voices=False)
+            try:
+                voices_info = get_voices(download_dir=str(download_dir), update_voices=True)
+            except Exception as e:
+                logger.warning(f"Could not get voices info: {e}, trying simple download")
+                voices_info = {}
             
             # Ensure voice exists (download if needed)
-            voice_path, config_path = ensure_voice_exists(
-                self.voice_name,
-                download_dir=str(Path.home() / ".local" / "share" / "piper"),
-                voices_info=voices_info
-            )
+            try:
+                voice_path, config_path = ensure_voice_exists(
+                    self.voice_name,
+                    download_dir=str(download_dir),
+                    voices_info=voices_info
+                )
+            except Exception as e:
+                # Fallback: try alternative method or suggest manual download
+                logger.error(f"Auto-download failed: {e}")
+                logger.info("Please install voice manually:")
+                logger.info(f"  mkdir -p {download_dir}")
+                logger.info(f"  cd {download_dir}")
+                logger.info(f"  wget https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/amy/medium/en_US-amy-medium.onnx")
+                logger.info(f"  wget https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/amy/medium/en_US-amy-medium.onnx.json")
+                raise
             
             # Load voice
             self.voice = PiperVoice.load(voice_path, config_path=config_path)
@@ -684,11 +703,12 @@ class AdaptiveTTSManager:
             try:
                 self.backends[VoiceBackend.PIPER] = PiperBackend()
                 if not OPENAI_AVAILABLE or VoiceBackend.OPENAI_TTS not in self.backends:
-                    logger.info(\"✓ Piper TTS backend available (PRIMARY - LOCAL, high-quality)\")
+                    logger.info("✓ Piper TTS backend available (PRIMARY - LOCAL, high-quality)")
                 else:
-                    logger.info(\"✓ Piper TTS backend available (FALLBACK - LOCAL, high-quality)\")
+                    logger.info("✓ Piper TTS backend available (FALLBACK - LOCAL, high-quality)")
             except Exception as e:
-                logger.warning(f\"Piper TTS initialization failed: {e}\")
+                logger.warning(f"Piper TTS initialization failed: {e}")
+                logger.info("Will use pyttsx3/eSpeak as fallback")
         
         # Try pyttsx3 (fallback)
         if PYTTSX3_AVAILABLE:
