@@ -443,6 +443,7 @@ Keep responses conversational and natural. Don't be overly formal."""
     async def _get_ollama_response(self) -> str:
         """Get response from Ollama local LLM."""
         import asyncio
+        import time
         from concurrent.futures import ThreadPoolExecutor
         
         messages = [
@@ -462,15 +463,29 @@ Keep responses conversational and natural. Don't be overly formal."""
         print(f"   [DEBUG] Calling Ollama with {len(messages)} messages...")
         print(f"   [DEBUG] Model: {self.ollama_model}, URL: {self.ollama_url}")
         
+        # Warn if first request (model loading takes time)
+        if len(self.conversation_history) <= 1:
+            print(f"   [INFO] First request - loading model, may take 5-10 seconds...")
+        
         # Run blocking request in thread pool to avoid blocking async loop
         loop = asyncio.get_event_loop()
-        with ThreadPoolExecutor() as executor:
-            response = await loop.run_in_executor(
-                executor,
-                lambda: requests.post(self.ollama_url, json=payload, timeout=60)
-            )
+        start_time = time.time()
         
-        print(f"   [DEBUG] Ollama HTTP status: {response.status_code}")
+        try:
+            with ThreadPoolExecutor() as executor:
+                response = await asyncio.wait_for(
+                    loop.run_in_executor(
+                        executor,
+                        lambda: requests.post(self.ollama_url, json=payload, timeout=90)
+                    ),
+                    timeout=90  # Overall timeout
+                )
+            
+            elapsed = time.time() - start_time
+            print(f"   [DEBUG] Ollama responded in {elapsed:.1f}s, HTTP status: {response.status_code}")
+        except asyncio.TimeoutError:
+            print(f"   [ERROR] Ollama timeout after {time.time() - start_time:.1f}s")
+            raise Exception("Ollama timeout - model may be stuck loading")
         
         if response.status_code != 200:
             print(f"   [ERROR] Ollama returned status {response.status_code}")
