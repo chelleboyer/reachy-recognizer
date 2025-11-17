@@ -48,13 +48,21 @@ from src.voice.adaptive_tts_manager import AdaptiveTTSManager
 from src.voice.greeting_selector import GreetingTemplate
 from src.behaviors.behavior_module import BehaviorManager, greeting_wave, look_at_person, idle_breath, thinking_look
 
-# OpenAI client
+# LLM clients
 try:
     from openai import OpenAI
     openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 except ImportError:
     openai_client = None
     print("⚠️  OpenAI package not installed. Install with: pip install openai")
+
+# Ollama client (local LLM)
+try:
+    import requests
+    ollama_available = True
+except ImportError:
+    ollama_available = False
+    print("⚠️  requests package not installed for Ollama support")
 
 
 class PersonDetector:
@@ -229,18 +237,26 @@ class SpeechRecognizer:
 
 
 class ConversationManager:
-    """Manages conversation state and GPT-4 interaction."""
+    """Manages conversation state and LLM interaction."""
     
-    def __init__(self, tts_manager: AdaptiveTTSManager):
+    def __init__(self, tts_manager: AdaptiveTTSManager, backend: str = "openai", ollama_model: str = "phi3:mini"):
         """
         Initialize conversation manager.
         
         Args:
             tts_manager: TTS manager for speaking responses
+            backend: LLM backend - "openai", "ollama", or "auto" (try ollama first)
+            ollama_model: Ollama model to use if backend is ollama
         """
         self.tts = tts_manager
+        self.backend = backend
+        self.ollama_model = ollama_model
+        self.ollama_url = "http://localhost:11434/api/chat"
         self.conversation_history: List[Dict[str, str]] = []
         self.max_history = 10  # Keep last 10 exchanges
+        
+        # Test backends
+        self._test_backends()
         
         # System prompt for Reachy's personality
         self.system_prompt = """You are Reachy, a friendly desk assistant robot. You are:
@@ -251,6 +267,51 @@ class ConversationManager:
 - Quick to engage but respectful of people's time
 
 Keep responses conversational and natural. Don't be overly formal."""
+    
+    def _test_backends(self):
+        """Test which backends are available and configure accordingly."""
+        self.ollama_works = False
+        self.openai_works = openai_client is not None
+        
+        # Test Ollama if needed
+        if self.backend in ["ollama", "auto"] and ollama_available:
+            try:
+                response = requests.get("http://localhost:11434/api/tags", timeout=2)
+                if response.status_code == 200:
+                    self.ollama_works = True
+                    models = response.json().get('models', [])
+                    model_names = [m['name'] for m in models]
+                    if self.ollama_model not in model_names and model_names:
+                        print(f"⚠️  Model {self.ollama_model} not found. Available: {model_names}")
+                        if model_names:
+                            self.ollama_model = model_names[0]
+                            print(f"   Using {self.ollama_model} instead")
+            except:
+                pass
+        
+        # Determine active backend
+        if self.backend == "auto":
+            if self.ollama_works:
+                self.active_backend = "ollama"
+                print(f"✓ Using Ollama ({self.ollama_model}) - LOCAL & FAST")
+            elif self.openai_works:
+                self.active_backend = "openai"
+                print("✓ Using OpenAI GPT-4 - CLOUD (slower)")
+            else:
+                self.active_backend = None
+                print("⚠️  No LLM backends available!")
+        elif self.backend == "ollama":
+            self.active_backend = "ollama" if self.ollama_works else None
+            if self.ollama_works:
+                print(f"✓ Using Ollama ({self.ollama_model}) - LOCAL & FAST")
+            else:
+                print("⚠️  Ollama not available. Start with: ollama serve")
+        else:  # openai
+            self.active_backend = "openai" if self.openai_works else None
+            if self.openai_works:
+                print("✓ Using OpenAI GPT-4 - CLOUD")
+            else:
+                print("⚠️  OpenAI not configured")
     
     def reset_conversation(self):
         """Clear conversation history."""
@@ -285,7 +346,7 @@ Keep responses conversational and natural. Don't be overly formal."""
     
     async def get_response(self, user_input: str) -> str:
         """
-        Get GPT-4 response to user input.
+        Get LLM response to user input.
         
         Args:
             user_input: User's speech text
@@ -293,7 +354,7 @@ Keep responses conversational and natural. Don't be overly formal."""
         Returns:
             Reachy's response text
         """
-        if not openai_client:
+        if not self.active_backend:
             return "Sorry, I'm having trouble connecting to my language center."
         
         # Add user input to history
@@ -307,20 +368,10 @@ Keep responses conversational and natural. Don't be overly formal."""
             self.conversation_history = self.conversation_history[-self.max_history * 2:]
         
         try:
-            # Build messages for GPT-4
-            messages = [
-                {"role": "system", "content": self.system_prompt}
-            ] + self.conversation_history
-            
-            # Call GPT-4
-            response = openai_client.chat.completions.create(
-                model="gpt-4o-mini",  # Faster and cheaper for desk assistant
-                messages=messages,
-                max_tokens=100,
-                temperature=0.8
-            )
-            
-            assistant_reply = response.choices[0].message.content.strip()
+            if self.active_backend == "ollama":
+                assistant_reply = await self._get_ollama_response()
+            else:  # openai
+                assistant_reply = await self._get_openai_response()
             
             # Add to history
             self.conversation_history.append({
@@ -331,8 +382,58 @@ Keep responses conversational and natural. Don't be overly formal."""
             return assistant_reply
         
         except Exception as e:
-            print(f"⚠️  GPT-4 error: {e}")
+            print(f"⚠️  LLM error ({self.active_backend}): {e}")
+            # Try fallback if auto mode
+            if self.backend == "auto" and self.active_backend == "ollama" and self.openai_works:
+                print("   Falling back to OpenAI...")
+                try:
+                    self.active_backend = "openai"
+                    assistant_reply = await self._get_openai_response()
+                    self.conversation_history.append({
+                        "role": "assistant",
+                        "content": assistant_reply
+                    })
+                    return assistant_reply
+                except:
+                    pass
             return "Sorry, I got a bit distracted. Could you repeat that?"
+    
+    async def _get_openai_response(self) -> str:
+        """Get response from OpenAI API."""
+        messages = [
+            {"role": "system", "content": self.system_prompt}
+        ] + self.conversation_history
+        
+        response = openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=messages,
+            max_tokens=100,
+            temperature=0.8
+        )
+        
+        return response.choices[0].message.content.strip()
+    
+    async def _get_ollama_response(self) -> str:
+        """Get response from Ollama local LLM."""
+        messages = [
+            {"role": "system", "content": self.system_prompt}
+        ] + self.conversation_history
+        
+        payload = {
+            "model": self.ollama_model,
+            "messages": messages,
+            "stream": False,
+            "options": {
+                "temperature": 0.8,
+                "num_predict": 100
+            }
+        }
+        
+        response = requests.post(self.ollama_url, json=payload, timeout=10)
+        response.raise_for_status()
+        
+        result = response.json()
+        return result['message']['content'].strip()
     
     async def speak(self, text: str, emotion: str = "neutral", energy: int = 3):
         """
@@ -368,6 +469,11 @@ def main():
     parser.add_argument('--vosk-model', type=str, 
                        default='models/vosk-model-small-en-us-0.15',
                        help='Path to Vosk model')
+    parser.add_argument('--llm', type=str, default='auto',
+                       choices=['auto', 'ollama', 'openai'],
+                       help='LLM backend: auto (try local first), ollama (local), or openai (cloud)')
+    parser.add_argument('--ollama-model', type=str, default='phi3:mini',
+                       help='Ollama model to use (default: phi3:mini)')
     parser.add_argument('--headless', action='store_true', help='No display window')
     args = parser.parse_args()
     
@@ -462,7 +568,7 @@ def main():
         tts = None
     
     # Conversation manager
-    conversation_manager = ConversationManager(tts)
+    conversation_manager = ConversationManager(tts, backend=args.llm, ollama_model=args.ollama_model)
     print("✓ Conversation manager ready")
     
     # Gesture system (optional)
