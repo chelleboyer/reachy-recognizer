@@ -813,8 +813,10 @@ class AdaptiveTTSManager:
     
     def _get_backend_priority(self) -> List[VoiceBackend]:
         """Get backends in priority order."""
-        # Priority: OpenAI -> pyttsx3
+        # Priority: Piper (high-quality local) -> OpenAI (cloud) -> pyttsx3 (basic fallback)
+        # Piper first for privacy and speed when available
         priority = [
+            VoiceBackend.PIPER,
             VoiceBackend.OPENAI_TTS,
             VoiceBackend.PYTTSX3
         ]
