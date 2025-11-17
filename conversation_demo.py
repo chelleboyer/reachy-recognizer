@@ -321,7 +321,7 @@ Keep responses conversational and natural. Don't be overly formal."""
                         "model": self.ollama_model,
                         "messages": [{"role": "user", "content": "Hi"}],
                         "stream": False,
-                        "keep_alive": "10m",  # Keep model loaded
+                        "keep_alive": 0,  # 0 = keep loaded forever (until manual unload)
                         "options": {
                             "temperature": 0.8,
                             "num_predict": 50  # Generate more to fully load model
@@ -495,7 +495,7 @@ Keep responses conversational and natural. Don't be overly formal."""
                     "model": self.ollama_model,
                     "messages": [{"role": "user", "content": "."}],
                     "stream": False,
-                    "keep_alive": "10m",
+                    "keep_alive": 0,  # Keep forever
                     "options": {"num_predict": 1}
                 }
                 requests.post(self.ollama_url, json=ping_payload, timeout=60)
@@ -511,7 +511,7 @@ Keep responses conversational and natural. Don't be overly formal."""
             "model": self.ollama_model,
             "messages": messages,
             "stream": False,
-            "keep_alive": "10m",  # Keep model loaded for 10 minutes
+            "keep_alive": 0,  # 0 = keep loaded forever
             "options": {
                 "temperature": 0.8,
                 "num_predict": 100
