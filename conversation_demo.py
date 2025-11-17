@@ -289,18 +289,26 @@ Keep responses conversational and natural. Don't be overly formal."""
                             self.ollama_model = model_names[0]
                             print(f"   Using {self.ollama_model} instead")
                     
-                    # Do a quick test generation
-                    print(f"   Testing {self.ollama_model} generation...")
+                    # Do a quick test generation (also pre-loads model)
+                    print(f"   Testing {self.ollama_model} generation (pre-loading model)...")
                     test_payload = {
                         "model": self.ollama_model,
                         "messages": [{"role": "user", "content": "Hi"}],
                         "stream": False,
                         "options": {"num_predict": 10}
                     }
-                    test_response = requests.post(self.ollama_url, json=test_payload, timeout=30)
+                    import time
+                    test_start = time.time()
+                    test_response = requests.post(self.ollama_url, json=test_payload, timeout=60)
+                    test_time = time.time() - test_start
+                    
                     if test_response.status_code == 200:
                         self.ollama_works = True
-                        print(f"   ✓ Ollama test successful!")
+                        print(f"   ✓ Ollama test successful! ({test_time:.1f}s)")
+                        if test_time > 10:
+                            print(f"   ⚠️  Model loaded slowly ({test_time:.1f}s). Next responses will be faster (~1-2s)")
+                        else:
+                            print(f"   ✓ Model already loaded, responses will be fast!")
                     else:
                         print(f"   ✗ Ollama test failed: HTTP {test_response.status_code}")
                 else:
@@ -542,6 +550,8 @@ def main():
                        help='LLM backend: auto (try local first), ollama (local), or openai (cloud)')
     parser.add_argument('--ollama-model', type=str, default='phi3:mini',
                        help='Ollama model to use (default: phi3:mini)')
+    parser.add_argument('--no-cloud', action='store_true',
+                       help='Disable all cloud services (OpenAI API) - 100%% local only')
     parser.add_argument('--headless', action='store_true', help='No display window')
     args = parser.parse_args()
     
@@ -551,8 +561,19 @@ def main():
     if args.headless and sys.platform.startswith("linux"):
         os.environ['QT_QPA_PLATFORM'] = 'offscreen'
     
+    # Disable OpenAI if --no-cloud flag set
+    if args.no_cloud:
+        global openai_client
+        openai_client = None
+        # Clear API key from environment
+        if 'OPENAI_API_KEY' in os.environ:
+            del os.environ['OPENAI_API_KEY']
+        print("🔒 Cloud services disabled - running 100%% LOCAL ONLY")
+    
     print("=" * 70)
     print("🤖 Reachy Conversational AI Demo (POC)")
+    if args.no_cloud:
+        print("🔒 MODE: 100%% LOCAL (No cloud services)")
     print("=" * 70)
     
     # Setup camera and Reachy

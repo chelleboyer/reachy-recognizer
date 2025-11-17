@@ -679,11 +679,14 @@ class AdaptiveTTSManager:
             except Exception as e:
                 logger.warning(f\"OpenAI TTS initialization failed: {e}\")
         
-        # Try Piper (high-quality local)
+        # Try Piper (high-quality local) - prioritize if no OpenAI
         if PIPER_AVAILABLE:
             try:
                 self.backends[VoiceBackend.PIPER] = PiperBackend()
-                logger.info(\"\u2713 Piper TTS backend available (LOCAL, high-quality)\")
+                if not OPENAI_AVAILABLE or VoiceBackend.OPENAI_TTS not in self.backends:
+                    logger.info(\"✓ Piper TTS backend available (PRIMARY - LOCAL, high-quality)\")
+                else:
+                    logger.info(\"✓ Piper TTS backend available (FALLBACK - LOCAL, high-quality)\")
             except Exception as e:
                 logger.warning(f\"Piper TTS initialization failed: {e}\")
         
