@@ -279,6 +279,7 @@ class ConversationManager:
         self.ollama_url = "http://localhost:11434/api/chat"
         self.conversation_history: List[Dict[str, str]] = []
         self.max_history = 10  # Keep last 10 exchanges
+        self.last_ollama_request = 0.0  # Track last Ollama use
         
         # Test backends
         self._test_backends()
@@ -333,6 +334,7 @@ Keep responses conversational and natural. Don't be overly formal."""
                     
                     if test_response.status_code == 200:
                         self.ollama_works = True
+                        self.last_ollama_request = time.time()  # Track test time
                         print(f"   ✓ Ollama test successful! ({test_time:.1f}s)")
                         if test_time > 10:
                             print(f"   ⚠️  Model loaded slowly ({test_time:.1f}s). Next responses will be faster (~1-2s)")
@@ -483,6 +485,24 @@ Keep responses conversational and natural. Don't be overly formal."""
         import time
         from concurrent.futures import ThreadPoolExecutor
         
+        # Check if model might have been unloaded (>5 min since last request)
+        time_since_last = time.time() - self.last_ollama_request
+        if time_since_last > 300:  # 5 minutes
+            print(f"   [INFO] Model may have unloaded ({time_since_last/60:.1f} min idle), sending wake-up ping...")
+            # Send quick ping to reload model
+            try:
+                ping_payload = {
+                    "model": self.ollama_model,
+                    "messages": [{"role": "user", "content": "."}],
+                    "stream": False,
+                    "keep_alive": "10m",
+                    "options": {"num_predict": 1}
+                }
+                requests.post(self.ollama_url, json=ping_payload, timeout=60)
+                print(f"   [INFO] Wake-up ping sent, model should be ready now")
+            except Exception as e:
+                print(f"   [WARN] Wake-up ping failed: {e}")
+        
         messages = [
             {"role": "system", "content": self.system_prompt}
         ] + self.conversation_history
@@ -538,6 +558,9 @@ Keep responses conversational and natural. Don't be overly formal."""
         
         content = result['message']['content'].strip()
         print(f"   [DEBUG] Ollama response: '{content[:50]}...' ({len(content)} chars)")
+        
+        # Update last request time
+        self.last_ollama_request = time.time()
         
         return content
     
