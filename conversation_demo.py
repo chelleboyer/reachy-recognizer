@@ -810,9 +810,11 @@ def main():
                                     print(f"   ⚠️  Thinking look failed: {e}")
                             threading.Thread(target=show_listening, daemon=True).start()
                         
-                        # Get GPT-4 response with thinking animation
+                        # Get LLM response with thinking animation
                         def handle_response():
-                            response = asyncio.run(conversation_manager.get_response(speech_text))
+                            # Type check: speech_text is str here (checked by if statement)
+                            user_text: str = speech_text  # type: ignore
+                            response = asyncio.run(conversation_manager.get_response(user_text))
                             print(f"🤖 Reachy: {response}")
                             asyncio.run(conversation_manager.speak(response))
                         
