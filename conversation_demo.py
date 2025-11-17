@@ -320,7 +320,10 @@ Keep responses conversational and natural. Don't be overly formal."""
                         "model": self.ollama_model,
                         "messages": [{"role": "user", "content": "Hi"}],
                         "stream": False,
-                        "options": {"num_predict": 10}
+                        "options": {
+                            "temperature": 0.8,
+                            "num_predict": 50  # Generate more to fully load model
+                        }
                     }
                     import time
                     test_start = time.time()
@@ -487,6 +490,7 @@ Keep responses conversational and natural. Don't be overly formal."""
             "model": self.ollama_model,
             "messages": messages,
             "stream": False,
+            "keep_alive": "10m",  # Keep model loaded for 10 minutes
             "options": {
                 "temperature": 0.8,
                 "num_predict": 100
@@ -496,9 +500,9 @@ Keep responses conversational and natural. Don't be overly formal."""
         print(f"   [DEBUG] Calling Ollama with {len(messages)} messages...")
         print(f"   [DEBUG] Model: {self.ollama_model}, URL: {self.ollama_url}")
         
-        # Warn if first request (model loading takes time)
+        # Note: Model should already be loaded from pre-load test
         if len(self.conversation_history) <= 1:
-            print(f"   [INFO] First request - loading model, may take 5-10 seconds...")
+            print(f"   [INFO] First conversation request (model pre-loaded)...")
         
         # Run blocking request in thread pool to avoid blocking async loop
         loop = asyncio.get_event_loop()
@@ -842,24 +846,30 @@ def main():
                         
                         # Get LLM response with thinking animation
                         def handle_response():
-                            # Type check: speech_text is str here (checked by if statement)
-                            user_text: str = speech_text  # type: ignore
-                            loop = get_shared_loop()
-                            
-                            # Get response
-                            future = asyncio.run_coroutine_threadsafe(
-                                conversation_manager.get_response(user_text),
-                                loop
-                            )
-                            response = future.result()  # Wait for completion
-                            print(f"🤖 Reachy: {response}")
-                            
-                            # Speak response
-                            future = asyncio.run_coroutine_threadsafe(
-                                conversation_manager.speak(response),
-                                loop
-                            )
-                            future.result()  # Wait for completion
+                            try:
+                                # Type check: speech_text is str here (checked by if statement)
+                                user_text: str = speech_text  # type: ignore
+                                loop = get_shared_loop()
+                                
+                                # Get response
+                                future = asyncio.run_coroutine_threadsafe(
+                                    conversation_manager.get_response(user_text),
+                                    loop
+                                )
+                                response = future.result()  # Wait for completion
+                                print(f"🤖 Reachy: {response}")
+                                
+                                # Speak response
+                                future = asyncio.run_coroutine_threadsafe(
+                                    conversation_manager.speak(response),
+                                    loop
+                                )
+                                future.result()  # Wait for completion
+                            except RuntimeError as e:
+                                if "cannot schedule new futures after shutdown" in str(e):
+                                    print("   (Response arrived after shutdown - ignoring)")
+                                else:
+                                    raise
                         
                         threading.Thread(target=handle_response, daemon=True).start()
                     
