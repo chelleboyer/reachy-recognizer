@@ -276,18 +276,41 @@ Keep responses conversational and natural. Don't be overly formal."""
         # Test Ollama if needed
         if self.backend in ["ollama", "auto"] and ollama_available:
             try:
-                response = requests.get("http://localhost:11434/api/tags", timeout=2)
+                print("   Testing Ollama connection...")
+                response = requests.get("http://localhost:11434/api/tags", timeout=5)
                 if response.status_code == 200:
-                    self.ollama_works = True
                     models = response.json().get('models', [])
                     model_names = [m['name'] for m in models]
+                    print(f"   Ollama models available: {model_names}")
+                    
                     if self.ollama_model not in model_names and model_names:
                         print(f"⚠️  Model {self.ollama_model} not found. Available: {model_names}")
                         if model_names:
                             self.ollama_model = model_names[0]
                             print(f"   Using {self.ollama_model} instead")
-            except:
-                pass
+                    
+                    # Do a quick test generation
+                    print(f"   Testing {self.ollama_model} generation...")
+                    test_payload = {
+                        "model": self.ollama_model,
+                        "messages": [{"role": "user", "content": "Hi"}],
+                        "stream": False,
+                        "options": {"num_predict": 10}
+                    }
+                    test_response = requests.post(self.ollama_url, json=test_payload, timeout=30)
+                    if test_response.status_code == 200:
+                        self.ollama_works = True
+                        print(f"   ✓ Ollama test successful!")
+                    else:
+                        print(f"   ✗ Ollama test failed: HTTP {test_response.status_code}")
+                else:
+                    print(f"   ✗ Ollama not responding (HTTP {response.status_code})")
+            except requests.exceptions.ConnectionError:
+                print("   ✗ Ollama not running. Start with: ollama serve")
+            except requests.exceptions.Timeout:
+                print("   ✗ Ollama timeout - model may be loading (try again)")
+            except Exception as e:
+                print(f"   ✗ Ollama test failed: {e}")
         
         # Determine active backend
         if self.backend == "auto":
@@ -419,6 +442,9 @@ Keep responses conversational and natural. Don't be overly formal."""
     
     async def _get_ollama_response(self) -> str:
         """Get response from Ollama local LLM."""
+        import asyncio
+        from concurrent.futures import ThreadPoolExecutor
+        
         messages = [
             {"role": "system", "content": self.system_prompt}
         ] + self.conversation_history
@@ -434,7 +460,17 @@ Keep responses conversational and natural. Don't be overly formal."""
         }
         
         print(f"   [DEBUG] Calling Ollama with {len(messages)} messages...")
-        response = requests.post(self.ollama_url, json=payload, timeout=30)
+        print(f"   [DEBUG] Model: {self.ollama_model}, URL: {self.ollama_url}")
+        
+        # Run blocking request in thread pool to avoid blocking async loop
+        loop = asyncio.get_event_loop()
+        with ThreadPoolExecutor() as executor:
+            response = await loop.run_in_executor(
+                executor,
+                lambda: requests.post(self.ollama_url, json=payload, timeout=60)
+            )
+        
+        print(f"   [DEBUG] Ollama HTTP status: {response.status_code}")
         
         if response.status_code != 200:
             print(f"   [ERROR] Ollama returned status {response.status_code}")
@@ -442,13 +478,15 @@ Keep responses conversational and natural. Don't be overly formal."""
             raise Exception(f"Ollama API error: {response.status_code}")
         
         result = response.json()
-        print(f"   [DEBUG] Ollama response received: {len(result.get('message', {}).get('content', ''))} chars")
         
         if 'message' not in result or 'content' not in result['message']:
             print(f"   [ERROR] Unexpected Ollama response format: {result}")
             raise Exception(f"Invalid Ollama response: {result}")
         
-        return result['message']['content'].strip()
+        content = result['message']['content'].strip()
+        print(f"   [DEBUG] Ollama response: '{content[:50]}...' ({len(content)} chars)")
+        
+        return content
     
     async def speak(self, text: str, emotion: str = "neutral", energy: int = 3):
         """
