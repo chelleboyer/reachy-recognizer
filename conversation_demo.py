@@ -383,6 +383,9 @@ Keep responses conversational and natural. Don't be overly formal."""
         
         except Exception as e:
             print(f"⚠️  LLM error ({self.active_backend}): {e}")
+            import traceback
+            traceback.print_exc()
+            
             # Try fallback if auto mode
             if self.backend == "auto" and self.active_backend == "ollama" and self.openai_works:
                 print("   Falling back to OpenAI...")
@@ -394,8 +397,9 @@ Keep responses conversational and natural. Don't be overly formal."""
                         "content": assistant_reply
                     })
                     return assistant_reply
-                except:
-                    pass
+                except Exception as fallback_error:
+                    print(f"   Fallback also failed: {fallback_error}")
+                    traceback.print_exc()
             return "Sorry, I got a bit distracted. Could you repeat that?"
     
     async def _get_openai_response(self) -> str:
@@ -429,10 +433,21 @@ Keep responses conversational and natural. Don't be overly formal."""
             }
         }
         
-        response = requests.post(self.ollama_url, json=payload, timeout=10)
-        response.raise_for_status()
+        print(f"   [DEBUG] Calling Ollama with {len(messages)} messages...")
+        response = requests.post(self.ollama_url, json=payload, timeout=30)
+        
+        if response.status_code != 200:
+            print(f"   [ERROR] Ollama returned status {response.status_code}")
+            print(f"   [ERROR] Response: {response.text}")
+            raise Exception(f"Ollama API error: {response.status_code}")
         
         result = response.json()
+        print(f"   [DEBUG] Ollama response received: {len(result.get('message', {}).get('content', ''))} chars")
+        
+        if 'message' not in result or 'content' not in result['message']:
+            print(f"   [ERROR] Unexpected Ollama response format: {result}")
+            raise Exception(f"Invalid Ollama response: {result}")
+        
         return result['message']['content'].strip()
     
     async def speak(self, text: str, emotion: str = "neutral", energy: int = 3):
