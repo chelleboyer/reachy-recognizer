@@ -853,13 +853,26 @@ def main():
                                 loop = get_shared_loop()
                                 
                                 # Get response
-                                print("   [DEBUG] Requesting LLM response...")
+                                print("   💭 Thinking... (requesting LLM response)")
+                                import time
+                                start_time = time.time()
+                                
                                 future = asyncio.run_coroutine_threadsafe(
                                     conversation_manager.get_response(user_text),
                                     loop
                                 )
-                                response = future.result()  # Wait for completion
-                                print(f"   [DEBUG] Got response, speaking now...")
+                                
+                                # Show progress while waiting
+                                import sys
+                                while not future.done():
+                                    elapsed = time.time() - start_time
+                                    sys.stdout.write(f"\r   💭 Thinking... ({elapsed:.0f}s)")
+                                    sys.stdout.flush()
+                                    time.sleep(0.5)
+                                
+                                response = future.result()  # Get the result
+                                elapsed = time.time() - start_time
+                                print(f"\r   ✓ Got response in {elapsed:.1f}s              ")
                                 print(f"🤖 Reachy: {response}")
                                 
                                 # Speak response
