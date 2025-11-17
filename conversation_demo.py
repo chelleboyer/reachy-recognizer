@@ -320,6 +320,7 @@ Keep responses conversational and natural. Don't be overly formal."""
                         "model": self.ollama_model,
                         "messages": [{"role": "user", "content": "Hi"}],
                         "stream": False,
+                        "keep_alive": "10m",  # Keep model loaded
                         "options": {
                             "temperature": 0.8,
                             "num_predict": 50  # Generate more to fully load model
@@ -852,11 +853,13 @@ def main():
                                 loop = get_shared_loop()
                                 
                                 # Get response
+                                print("   [DEBUG] Requesting LLM response...")
                                 future = asyncio.run_coroutine_threadsafe(
                                     conversation_manager.get_response(user_text),
                                     loop
                                 )
                                 response = future.result()  # Wait for completion
+                                print(f"   [DEBUG] Got response, speaking now...")
                                 print(f"🤖 Reachy: {response}")
                                 
                                 # Speak response
