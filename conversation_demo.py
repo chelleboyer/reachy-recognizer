@@ -65,6 +65,31 @@ except ImportError:
     print("⚠️  requests package not installed for Ollama support")
 
 
+# Shared event loop for async operations
+_event_loop = None
+_loop_thread = None
+
+def get_shared_loop():
+    """Get or create shared event loop running in background thread."""
+    global _event_loop, _loop_thread
+    
+    if _event_loop is None:
+        def run_loop():
+            global _event_loop
+            _event_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(_event_loop)
+            _event_loop.run_forever()
+        
+        _loop_thread = threading.Thread(target=run_loop, daemon=True)
+        _loop_thread.start()
+        
+        # Wait for loop to be ready
+        while _event_loop is None:
+            time.sleep(0.01)
+    
+    return _event_loop
+
+
 class PersonDetector:
     """Simple person detection using MediaPipe Pose or face detection."""
     
@@ -762,11 +787,16 @@ def main():
                         print(f"🤖 Reachy: {greeting}")
                         
                         def speak_greeting():
-                            asyncio.run(conversation_manager.speak(
-                                greeting, 
-                                emotion="friendly",
-                                energy=4
-                            ))
+                            loop = get_shared_loop()
+                            future = asyncio.run_coroutine_threadsafe(
+                                conversation_manager.speak(
+                                    greeting, 
+                                    emotion="friendly",
+                                    energy=4
+                                ),
+                                loop
+                            )
+                            future.result()  # Wait for completion
                         
                         threading.Thread(target=speak_greeting, daemon=True).start()
                         
@@ -814,9 +844,22 @@ def main():
                         def handle_response():
                             # Type check: speech_text is str here (checked by if statement)
                             user_text: str = speech_text  # type: ignore
-                            response = asyncio.run(conversation_manager.get_response(user_text))
+                            loop = get_shared_loop()
+                            
+                            # Get response
+                            future = asyncio.run_coroutine_threadsafe(
+                                conversation_manager.get_response(user_text),
+                                loop
+                            )
+                            response = future.result()  # Wait for completion
                             print(f"🤖 Reachy: {response}")
-                            asyncio.run(conversation_manager.speak(response))
+                            
+                            # Speak response
+                            future = asyncio.run_coroutine_threadsafe(
+                                conversation_manager.speak(response),
+                                loop
+                            )
+                            future.result()  # Wait for completion
                         
                         threading.Thread(target=handle_response, daemon=True).start()
                     
@@ -825,11 +868,16 @@ def main():
                         print("\n⏱️  Conversation timeout - saying goodbye...")
                         
                         def say_goodbye():
-                            asyncio.run(conversation_manager.speak(
-                                "Nice chatting with you! Let me know if you need anything.",
-                                emotion="friendly",
-                                energy=3
-                            ))
+                            loop = get_shared_loop()
+                            future = asyncio.run_coroutine_threadsafe(
+                                conversation_manager.speak(
+                                    "Nice chatting with you! Let me know if you need anything.",
+                                    emotion="friendly",
+                                    energy=3
+                                ),
+                                loop
+                            )
+                            future.result()  # Wait for completion
                         
                         threading.Thread(target=say_goodbye, daemon=True).start()
                         
