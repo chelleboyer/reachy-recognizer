@@ -222,9 +222,9 @@ class SpeechRecognizer:
             try:
                 data = self.audio_queue.get_nowait()
                 
-                if self.recognizer.AcceptWaveform(data):
+                if self.recognizer.AcceptWaveform(data):  # type: ignore
                     # Full phrase recognized
-                    result = json.loads(self.recognizer.Result())
+                    result = json.loads(self.recognizer.Result())  # type: ignore
                     text = result.get('text', '').strip()
                     if text:
                         return text
@@ -239,12 +239,12 @@ class SpeechRecognizer:
 class ConversationManager:
     """Manages conversation state and LLM interaction."""
     
-    def __init__(self, tts_manager: AdaptiveTTSManager, backend: str = "openai", ollama_model: str = "phi3:mini"):
+    def __init__(self, tts_manager: Optional[AdaptiveTTSManager], backend: str = "openai", ollama_model: str = "phi3:mini"):
         """
         Initialize conversation manager.
         
         Args:
-            tts_manager: TTS manager for speaking responses
+            tts_manager: TTS manager for speaking responses (can be None)
             backend: LLM backend - "openai", "ollama", or "auto" (try ollama first)
             ollama_model: Ollama model to use if backend is ollama
         """
@@ -431,7 +431,7 @@ Keep responses conversational and natural. Don't be overly formal."""
             {"role": "system", "content": self.system_prompt}
         ] + self.conversation_history
         
-        response = openai_client.chat.completions.create(
+        response = openai_client.chat.completions.create(  # type: ignore
             model="gpt-4o-mini",
             messages=messages,
             max_tokens=100,
